@@ -358,6 +358,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid hsl(var(--accent)); o
 .insight { padding:19px 0;border-top:1px solid hsl(var(--border)); }
 .insight:first-of-type { border:0;padding-top:0; }
 .insight h3 { font:500 22px var(--app-font-serif);margin:5px 0 9px; }
+.insight h4 { font-size:12px;letter-spacing:.04em;margin:17px 0 6px; }
 .insight p,.insight li { color:hsl(var(--muted-foreground));font-size:13px;line-height:1.7; }
 .insight ul { padding-left:19px; }
 .result-actions { display:flex;gap:9px;flex-wrap:wrap;margin-top:22px; }

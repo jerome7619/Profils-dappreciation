@@ -37,7 +37,7 @@ Questionnaires francophones de réflexion pour découvrir comment chacun préfè
 
 ## Product
 
-The app offers separate 25-choice family and workplace questionnaires, personalized preference summaries with examples, QR/link sharing for the family survey, and local print/PDF, clipboard, and mailto sharing for results. It is an informal reflection aid, not a validated assessment.
+The app offers an 8-question family questionnaire and a separate 25-choice workplace questionnaire, personalized preference summaries with examples, QR/link sharing for the family survey, and local print/PDF, clipboard, and mailto sharing for results. It is an informal reflection aid, not a validated assessment.
 
 ## User preferences
 
