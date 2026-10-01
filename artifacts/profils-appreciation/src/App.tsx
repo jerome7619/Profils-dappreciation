@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import {
-  ArrowDownToLine, ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight,
+  ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, Copy,
   HeartHandshake, Link2, Mail, Printer, RotateCcw, Share2, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -273,13 +273,6 @@ function Home({ toast }: { toast: (message: string) => void }) {
     try { await navigator.clipboard.writeText(familyUrl); toast('Lien du questionnaire famille copié.'); }
     catch { toast('Copie indisponible dans ce navigateur.'); }
   };
-  const downloadQr = () => {
-    const svg = document.querySelector('.qr-frame svg');
-    if (!svg) return;
-    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
-    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'questionnaire-famille-qr.svg'; link.click(); URL.revokeObjectURL(link.href);
-    toast('Code QR téléchargé.');
-  };
   const resetAll = () => {
     clearSaved('famille'); clearSaved('travail');
     setShowReset(false); toast('Les réponses enregistrées sur cet appareil ont été effacées.'); window.location.reload();
@@ -309,7 +302,7 @@ function Home({ toast }: { toast: (message: string) => void }) {
       <section id="partager" className="section" style={{ paddingTop: 5 }}>
         <div className="privacy-band">
           <div><span className="eyebrow">Privé par conception</span><h2>Vos réponses restent ici.</h2><p>Aucun compte, aucun nom, aucune donnée envoyée ailleurs. Les réponses et résultats sont enregistrés uniquement dans le stockage local de ce navigateur. Vous pouvez tout effacer à tout moment.</p></div>
-          <div className="qr-card"><div className="qr-frame"><LocalQr value={familyUrl} /></div><div><span className="eyebrow">À partager en famille</span><p>Ce code ouvre le questionnaire famille uniquement. Il ne contient aucune réponse personnelle.</p><button className="button button-light" onClick={copyFamilyLink} data-testid="button-copy-family-link"><Link2 size={15} /> Copier le lien</button><button className="button button-quiet" onClick={downloadQr} data-testid="button-download-qr"><ArrowDownToLine size={15} /> Télécharger le QR</button><button className="button button-quiet" onClick={() => window.print()} data-testid="button-print-qr"><Printer size={15} /> Imprimer</button></div></div>
+          <div className="qr-card"><div className="qr-frame"><LocalQr value={familyUrl} /></div><div><span className="eyebrow">À partager en famille</span><p>Ce code ouvre le questionnaire famille uniquement. Il ne contient aucune réponse personnelle.</p><button className="button button-light" onClick={copyFamilyLink} data-testid="button-copy-family-link"><Link2 size={15} /> Copier le lien</button></div></div>
         </div>
       </section>
       <section className="section" style={{ paddingTop: 0 }}>
@@ -424,6 +417,11 @@ function PrintProfileSheet({ kind, categories, result, interpretationCategories 
   </section>;
 }
 
+function escapeHtml(value: string) {
+  const entities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return value.replace(/[&<>"']/g, (character) => entities[character]);
+}
+
 function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) => void }) {
   const [, navigate] = useLocation();
   const saved = readSaved(kind);
@@ -460,10 +458,94 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
     interpretationCategories.some((category) => category.id === 'affection') ? 'Pour les gestes physiques, demande et respecte toujours la réponse de l’autre.' : '',
   ].filter(Boolean).join('\n');
   const shareText = kind === 'famille' ? familyActionSummary : summary;
-  const copyResult = async () => {
-    try { await navigator.clipboard.writeText(shareText); toast(kind === 'famille' ? 'Fiche action copiée.' : 'Carte de profil copiée.'); }
-    catch { toast('Copie indisponible dans ce navigateur.'); }
-  };
+  const emailHeadline = tiedAtTop
+    ? `${leaders.slice(0, 2).map((category) => category.label).join(' et ')}${leaders.length > 2 ? ' et autres' : ''} (${leaders[0] ? result?.percentages[leaders[0].id] : 0} %)`
+    : primary ? `${primary.label} (${result?.percentages[primary.id]} %)` : '';
+  const emailSubject = `Mon profil ${kind === 'famille' ? 'd’appréciation en famille' : 'de reconnaissance au travail'} — ${emailHeadline}`;
+  const emailBody = result && primary && secondary ? [
+    'PROFILS D’APPRÉCIATION',
+    kind === 'famille' ? 'FICHE ACTION · FAMILLE' : 'CARTE DE PROFIL · ENTREPRISE',
+    '',
+    'Bonjour,',
+    kind === 'famille'
+      ? 'Je vous partage quelques repères sur ce qui m’aide à me sentir apprécié·e à la maison.'
+      : 'Je vous partage quelques repères sur ce qui m’aide à me sentir reconnu·e au travail.',
+    '',
+    '────────────────────────────────',
+    tiedAtTop
+      ? `MES PRÉFÉRENCES EN TÊTE : ${leaders.map((category) => `${category.label} (${result.percentages[category.id]} %)` ).join(' · ')}`
+      : `MA PRÉFÉRENCE PRINCIPALE : ${primary.label} (${result.percentages[primary.id]} %)\nMa préférence secondaire : ${secondary.label} (${result.percentages[secondary.id]} %)`,
+    '',
+    ...interpretationCategories.map((category) => [
+      `◆ ${category.label.toUpperCase()} · ${result.percentages[category.id]} %`,
+      category.intro,
+      kind === 'famille' ? 'CE QUI ME FAIT DU BIEN :' : 'DES FAÇONS DE ME RECONNAÎTRE :',
+      ...category.examples.slice(0, 3).map((example) => `  • ${example}`),
+      category.hurts?.length ? `À ÉVITER : ${category.hurts[0]}` : '',
+      category.note ? `${category.noteLabel ?? 'À noter'} : ${category.note}` : '',
+    ].filter(Boolean).join('\n')),
+    '',
+    'LES CINQ PRÉFÉRENCES',
+    categories.map((category) => `• ${category.label} : ${result.percentages[category.id]} %`).join('\n'),
+    kind === 'famille' ? '\nPour en parler : « Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »' : '',
+    kind === 'famille' && interpretationCategories.some((category) => category.id === 'affection')
+      ? 'Les gestes physiques ne conviennent que s’ils sont souhaités par toutes les personnes concernées. Le consentement et les limites passent avant toute préférence.'
+      : '',
+    '',
+    'Ce résultat est une aide à la réflexion et à la conversation, pas un diagnostic. Les préférences peuvent évoluer.',
+  ].filter(Boolean).join('\n') : '';
+  const emailProfilesHtml = interpretationCategories.map((category) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;border:1px solid #dce2da;border-radius:10px;background:#ffffff;">
+      <tr><td style="padding:14px 16px 4px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-family:Arial,sans-serif;font-size:17px;font-weight:bold;color:#253b32;">${escapeHtml(category.label)}</td>
+          <td align="right" style="font-family:Arial,sans-serif;font-size:13px;font-weight:bold;color:#315e52;">${result?.percentages[category.id] ?? 0} %</td>
+        </tr></table>
+        <p style="margin:8px 0;color:#536157;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;">${escapeHtml(category.intro)}</p>
+        <p style="margin:8px 0 4px;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;color:#315e52;">${kind === 'famille' ? 'CE QUI ME FAIT DU BIEN' : 'DES FAÇONS DE ME RECONNAÎTRE'}</p>
+        <ul style="margin:4px 0 10px;padding-left:20px;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;color:#536157;">
+          ${category.examples.slice(0, 3).map((example) => `<li style="padding:2px 0;">${escapeHtml(example)}</li>`).join('')}
+        </ul>
+        ${category.hurts?.length ? `<p style="margin:6px 0;font-family:Arial,sans-serif;font-size:12px;line-height:1.45;color:#536157;"><strong>À éviter :</strong> ${escapeHtml(category.hurts[0])}</p>` : ''}
+        ${category.note ? `<p style="margin:6px 0;font-family:Arial,sans-serif;font-size:12px;line-height:1.45;color:#536157;"><strong>${escapeHtml(category.noteLabel ?? 'À noter')} :</strong> ${escapeHtml(category.note)}</p>` : ''}
+      </td></tr>
+    </table>`).join('');
+  const emailScoresHtml = categories.map((category) => `
+    <tr>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e9e2;font-family:Arial,sans-serif;font-size:12px;color:#536157;">${escapeHtml(category.label)}</td>
+      <td align="right" style="padding:7px 10px;border-bottom:1px solid #e5e9e2;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;color:#315e52;">${result?.percentages[category.id] ?? 0} %</td>
+    </tr>`).join('');
+  const emailHtml = result && primary && secondary ? `
+    <html><body style="margin:0;padding:20px;background:#f6f4ed;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+        <table role="presentation" width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;font-family:Arial,sans-serif;color:#253b32;">
+          <tr><td style="padding:22px 24px;border-radius:14px 14px 0 0;background:#315e52;color:#ffffff;">
+            <p style="margin:0 0 8px;font-size:11px;font-weight:bold;letter-spacing:1.5px;">PROFILS D’APPRÉCIATION</p>
+            <h1 style="margin:0;font-size:25px;line-height:1.2;">${kind === 'famille' ? 'Ma fiche action · famille' : 'Mon profil de reconnaissance au travail'}</h1>
+            <p style="margin:8px 0 0;font-size:14px;line-height:1.5;color:#edf2eb;">${kind === 'famille' ? 'Des repères concrets pour mieux se comprendre à la maison.' : 'Ce qui m’aide à me sentir reconnu·e dans mon travail.'}</p>
+          </td></tr>
+          <tr><td style="padding:14px 4px 12px;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#536157;">
+            <p style="margin:0 0 6px;">Bonjour,</p>
+            <p style="margin:0;">${kind === 'famille' ? 'Je vous partage quelques repères sur ce qui m’aide à me sentir apprécié·e à la maison.' : 'Je vous partage quelques repères sur ce qui m’aide à me sentir reconnu·e au travail.'}</p>
+          </td></tr>
+          <tr><td style="padding:18px 20px;background:#f3f0e6;">
+            <p style="margin:0 0 5px;font-size:11px;font-weight:bold;letter-spacing:1px;color:#68786d;">${tiedAtTop ? 'PRÉFÉRENCES À ÉGALITÉ' : 'PRÉFÉRENCE PRINCIPALE'}</p>
+            <p style="margin:0;font-family:Georgia,serif;font-size:22px;line-height:1.25;color:#253b32;">${escapeHtml(tiedAtTop ? leaders.map((category) => category.label).join(' · ') : primary.label)}</p>
+            <p style="margin:5px 0 0;font-size:13px;color:#536157;">${tiedAtTop ? `${result.percentages[leaders[0]?.id ?? primary.id]} % chacune` : `${result.percentages[primary.id]} % · préférence secondaire : ${escapeHtml(secondary.label)} (${result.percentages[secondary.id]} %)`}</p>
+          </td></tr>
+          <tr><td style="padding:16px 0 4px;">
+            <h2 style="margin:0 0 10px;font-size:15px;color:#315e52;">${kind === 'famille' ? 'Des gestes qui me font du bien' : 'Quelques façons de me reconnaître'}</h2>
+            ${emailProfilesHtml}
+          </td></tr>
+          <tr><td style="padding:13px 16px;border-radius:10px;background:#ffffff;">
+            <h2 style="margin:0 0 6px;font-size:14px;color:#315e52;">Mes cinq préférences</h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${emailScoresHtml}</table>
+          </td></tr>
+          ${kind === 'famille' ? `<tr><td style="padding:14px 4px 4px;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;color:#536157;"><strong>Pour ouvrir la conversation :</strong> « Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »${interpretationCategories.some((category) => category.id === 'affection') ? '<br><br>Les gestes physiques ne conviennent que s’ils sont souhaités. Le consentement et les limites passent avant toute préférence.' : ''}</td></tr>` : ''}
+          <tr><td style="padding:14px 4px;font-family:Arial,sans-serif;font-size:11px;line-height:1.45;color:#69766d;">Un point de départ pour discuter, pas une étiquette ni un diagnostic. Les préférences peuvent évoluer.</td></tr>
+        </table>
+      </td></tr></table>
+    </body></html>` : '';
   const shareProfile = async () => {
     try {
       if (navigator.share) {
@@ -476,7 +558,25 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
     try { await navigator.clipboard.writeText(shareText); toast('Fiche copiée, prête à partager.'); }
     catch { toast('Partage indisponible dans ce navigateur.'); }
   };
-  const emailResult = () => { window.location.href = `mailto:?subject=${encodeURIComponent(`Mon reflet ${resultContext(kind)}`)}&body=${encodeURIComponent(summary)}`; };
+  const copyFormattedEmail = async () => {
+    try {
+      if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({
+            'text/html': new Blob([emailHtml], { type: 'text/html' }),
+            'text/plain': new Blob([emailBody], { type: 'text/plain' }),
+          })]);
+          toast('Fiche mise en forme copiée. Collez-la dans le courriel.');
+          return;
+        } catch {
+          // Some browsers allow plain-text clipboard access but block HTML clipboard data.
+        }
+      }
+      await navigator.clipboard.writeText(emailBody);
+      toast('Version texte copiée. Collez-la dans le courriel.');
+    } catch { toast('Copie indisponible dans ce navigateur.'); }
+  };
+  const prepareEmail = () => { window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`; };
   const reset = () => { clearSaved(kind); setConfirmClear(false); navigate(`/sondage-${kind}`); };
   if (!result || !primary || !secondary) return <>
     <Header /><main className="page-wrap"><div className="empty-state"><span className="brand-mark" style={{ margin: 'auto' }}><HeartHandshake size={21} /></span><h1>Votre reflet est en attente.</h1><p>Répondez aux {questionCount} questions du questionnaire {surveyLabel(kind)} pour découvrir votre résultat. Vos réponses sont conservées uniquement sur cet appareil.</p><Link className="button button-primary" href={`/sondage-${kind}`}>Continuer le questionnaire <ArrowRight size={16} /></Link><div style={{ marginTop: 12 }}><button className="button button-quiet" onClick={() => { clearSaved(kind); toast('Réponses effacées.'); }} data-testid="button-clear-empty">Effacer les réponses enregistrées</button></div></div></main><Footer />
@@ -506,7 +606,12 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
           </div>
           <div className="conversation-prompt"><strong>Pour commencer la conversation</strong><p>« Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »</p></div>
           {interpretationCategories.some((category) => category.id === 'affection') && <p className="profile-card-consent">Les gestes physiques ne conviennent que s’ils sont souhaités. Demandez, écoutez et respectez les limites de chacun·e.</p>}
-          <div className="profile-card-buttons"><button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager avec mes proches</button><button className="button button-light" onClick={copyResult} data-testid="button-copy-result"><Link2 size={16} /> Copier la fiche action</button></div>
+          <div className="profile-card-buttons">
+            <button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager avec mes proches</button>
+            <button className="button button-light" onClick={prepareEmail} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button>
+            <button className="button button-light" onClick={copyFormattedEmail} data-testid="button-copy-formatted-email"><Copy size={16} /> Copier la fiche mise en forme</button>
+          </div>
+          <p className="small-note" style={{ marginTop: 10 }}>« Préparer un courriel » ouvre un brouillon avec l’objet. La copie mise en forme concerne le corps du message : placez le curseur à l’endroit voulu dans Outlook avant de coller, notamment au-dessus de votre signature.</p>
         </section> : <section className="profile-card work-profile-card" data-testid="work-profile-card">
           <div className="profile-card-overline"><span className="eyebrow">Carte de profil · entreprise</span><span>À partager au travail</span></div>
           <h2>{profileCardCategories.map((category) => category.label).join(' · ')}</h2>
@@ -519,7 +624,12 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
             </article>)}
           </div>
           {!tiedAtTop && <p className="profile-card-secondary"><strong>Une préférence secondaire :</strong> {secondary.label} ({result.percentages[secondary.id]} %)</p>}
-          <div className="profile-card-buttons"><button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager ma carte</button><button className="button button-light" onClick={copyResult} data-testid="button-copy-result"><Link2 size={16} /> Copier la carte de profil</button></div>
+          <div className="profile-card-buttons">
+            <button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager ma carte</button>
+            <button className="button button-light" onClick={prepareEmail} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button>
+            <button className="button button-light" onClick={copyFormattedEmail} data-testid="button-copy-formatted-email"><Copy size={16} /> Copier la fiche mise en forme</button>
+          </div>
+          <p className="small-note" style={{ marginTop: 10 }}>« Préparer un courriel » ouvre un brouillon avec l’objet. La copie mise en forme concerne le corps du message : placez le curseur à l’endroit voulu dans Outlook avant de coller, notamment au-dessus de votre signature.</p>
         </section>}
         <div className="result-content">
           <section className="result-panel"><span className="eyebrow">Vos cinq préférences</span><h2>Un aperçu, sans classement.</h2><p className="small-note">Les pourcentages représentent la part de choix associés à chaque façon de recevoir de l’attention. Ils ne mesurent pas votre valeur.</p>
@@ -531,8 +641,8 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
         </div>
         {kind === 'famille' && <div className="notice"><strong>Rappel de consentement :</strong> l’affection physique ne convient que si elle est souhaitée par toutes les personnes concernées. Demandez, écoutez et respectez les limites, sans exception.</div>}
         <div className="notice"><strong>À garder en tête.</strong> Ceci est une aide à la réflexion, pas un test clinique ni un outil psychométrique validé. Vos préférences peuvent évoluer et ne résument pas votre personnalité. Ce projet n’est pas affilié à Gary Chapman ni à son éditeur.</div>
-        <div className="result-actions"><button className="button button-primary" onClick={() => window.print()} data-testid="button-print-result"><Printer size={16} /> Fiche PDF · 1 page</button><button className="button button-light" onClick={emailResult} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button><Link className="button button-light" href={`/sondage-${kind}`}><RotateCcw size={16} /> Refaire le questionnaire</Link><button className="button button-quiet" onClick={() => setConfirmClear(true)} data-testid="button-delete-result">Effacer mon résultat</button></div>
-        <p className="small-note" style={{ marginTop: 15 }}>« Préparer un courriel » ouvre votre application de messagerie avec le résumé prérempli. L’application n’envoie aucun message.</p>
+        <div className="result-actions"><button className="button button-primary" onClick={() => window.print()} data-testid="button-print-result"><Printer size={16} /> Fiche PDF · 1 page</button><Link className="button button-light" href={`/sondage-${kind}`}><RotateCcw size={16} /> Refaire le questionnaire</Link><button className="button button-quiet" onClick={() => setConfirmClear(true)} data-testid="button-delete-result">Effacer mon résultat</button></div>
+        <p className="small-note" style={{ marginTop: 15 }}>L’application prépare un brouillon; elle n’envoie aucun courriel à votre place.</p>
       </div>
     </main>
     <Footer />

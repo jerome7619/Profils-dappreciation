@@ -1,1 +1,2 @@
 - [Workspace package installs](pnpm-workspace-install.md) — Replit's package installer may need a pnpm workspace-filter fallback for artifact dependencies.
+- [Email sharing](email-sharing.md) — Use mailto for subject/body drafts; rich clipboard copy only supplies content and follows the mail client's cursor/signature.
