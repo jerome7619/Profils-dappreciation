@@ -1,0 +1,1 @@
+- [Workspace package installs](pnpm-workspace-install.md) — Replit's package installer may need a pnpm workspace-filter fallback for artifact dependencies.

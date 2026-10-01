@@ -1,10 +1,12 @@
-# [Project name]
+# Profils d’appréciation
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Questionnaires francophones de réflexion pour découvrir comment chacun préfère recevoir de l’attention et de la reconnaissance, à la maison comme au travail.
 
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/profils-appreciation run dev` — run the web app
+- `pnpm --filter @workspace/profils-appreciation run typecheck` — check the web app
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -22,23 +24,29 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/profils-appreciation/` — public-facing questionnaire app
+- `artifacts/profils-appreciation/src/App.tsx` — survey content, scoring, results, and sharing flows
+- `artifacts/profils-appreciation/src/index.css` — app theme and responsive styles
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Responses and scores are computed in the browser and stored only in that browser's local storage.
+- Family and workplace questionnaires are separate; the workplace version uses trust and autonomy instead of physical contact.
+- The QR code shares the family questionnaire link only; it never contains a participant's answers or result.
+- Email sharing opens the participant's own mail app with a prepared summary; the app does not send email.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The app offers separate 25-choice family and workplace questionnaires, personalized preference summaries with examples, QR/link sharing for the family survey, and local print/PDF, clipboard, and mailto sharing for results. It is an informal reflection aid, not a validated assessment.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+The user is communicating in French; keep app copy and explanations in French.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- A QR code scanned by other people needs the app published so its URL is reachable outside the preview.
+- Do not add team dashboards or send/collect individual workplace profiles without revisiting consent, access, and anonymity requirements.
 
 ## Pointers
 

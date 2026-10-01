@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Profils d’appréciation"
+description = "Deux questionnaires francophones pour découvrir comment chacun préfère recevoir de l’appréciation dans sa vie personnelle ou au travail, avec résultats privés, conseils concrets, fiches partageables et QR code."
+version = "1.0.0"
+id = "artifacts/profils-appreciation"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26257
+
+[services.development]
+run = "pnpm --filter @workspace/profils-appreciation run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/profils-appreciation", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/profils-appreciation/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26257"
+BASE_PATH = "/"
