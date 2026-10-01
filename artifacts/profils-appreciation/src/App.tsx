@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import {
   ArrowDownToLine, ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight,
-  HeartHandshake, Link2, Mail, Printer, RotateCcw, ShieldCheck, Sparkles,
+  HeartHandshake, Link2, Mail, Printer, RotateCcw, Share2, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -382,6 +382,48 @@ function Survey({ kind, toast }: { kind: SurveyKind; toast: (message: string) =>
   </>;
 }
 
+function PrintProfileSheet({ kind, categories, result, interpretationCategories }: {
+  kind: SurveyKind;
+  categories: Category[];
+  result: Result;
+  interpretationCategories: Category[];
+}) {
+  return <section className={`print-sheet print-sheet-${kind}`} aria-label={kind === 'famille' ? 'Fiche action à imprimer' : 'Carte de profil à imprimer'}>
+    <header className="print-sheet-header">
+      <div className="print-brand">Profils d’appréciation <span>· mieux se comprendre</span></div>
+      <span className="eyebrow">{kind === 'famille' ? 'Fiche action · Famille' : 'Carte de profil · Entreprise'}</span>
+      <h1>{kind === 'famille' ? 'Pour mieux se comprendre à la maison' : 'Mon profil de reconnaissance au travail'}</h1>
+      <p>{kind === 'famille'
+        ? 'Des repères concrets à partager avec votre partenaire, vos enfants ou vos proches.'
+        : 'Une façon simple de faire connaître ce qui vous aide à vous sentir reconnu·e dans votre travail.'}</p>
+    </header>
+    <div className="print-score-list" aria-label="Répartition des préférences">
+      {categories.map((category) => <div className="print-score" key={category.id}>
+        <span>{category.label}</span><strong>{result.percentages[category.id]} %</strong>
+      </div>)}
+    </div>
+    <div className="print-profile-list">
+      {interpretationCategories.map((category) => <article className="print-profile" key={category.id}>
+        <div className="print-profile-heading">
+          <h2>{category.label}</h2>
+          <strong>{result.percentages[category.id]} %</strong>
+        </div>
+        <p>{category.intro}</p>
+        <strong className="print-action-label">{kind === 'famille' ? 'Des gestes qui me font du bien' : 'Pour me reconnaître'}</strong>
+        <ul>{category.examples.slice(0, kind === 'famille' ? 2 : 3).map((example) => <li key={example}>{example}</li>)}</ul>
+        {category.hurts?.length ? <p className="print-note"><strong>Ce qui peut blesser :</strong> {category.hurts[0]}</p> : null}
+        {category.note ? <p className="print-note"><strong>{category.noteLabel ?? 'À noter'} :</strong> {category.note}</p> : null}
+      </article>)}
+    </div>
+    {kind === 'famille' && <aside className="print-conversation">
+      <strong>Pour ouvrir la conversation</strong>
+      <span>« Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »</span>
+      {interpretationCategories.some((category) => category.id === 'affection') && <small>Les gestes physiques ne conviennent que s’ils sont souhaités par toutes les personnes concernées. Le consentement et les limites passent avant toute préférence.</small>}
+    </aside>}
+    <footer className="print-sheet-footer">Un point de départ pour discuter, pas une étiquette ni un diagnostic. Les préférences peuvent évoluer.</footer>
+  </section>;
+}
+
 function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) => void }) {
   const [, navigate] = useLocation();
   const saved = readSaved(kind);
@@ -395,6 +437,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
     .filter((category): category is Category => Boolean(category)) : [];
   const tiedAtTop = leaders.length > 1;
   const interpretationCategories = tiedAtTop ? leaders : [primary, secondary].filter((category): category is Category => Boolean(category));
+  const profileCardCategories = tiedAtTop ? leaders : [primary].filter((category): category is Category => Boolean(category));
   const [confirmClear, setConfirmClear] = useState(false);
   const summary = result && primary && secondary ? [
     `Mon reflet ${resultContext(kind)} — Profils d’appréciation`,
@@ -410,9 +453,28 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
     `Ce résultat est une aide à la réflexion, pas un test psychométrique validé ni un diagnostic. Il peut évoluer.`,
     'Les réponses restent dans le navigateur où le questionnaire a été rempli.',
   ].join('\n') : '';
+  const familyActionSummary = [
+    'Voici quelques façons concrètes de me montrer que tu m’apprécies :',
+    ...interpretationCategories.map((category) => `${category.label} : ${category.examples.slice(0, 2).join(' ; ')}`),
+    'Pour en parler ensemble : « Qu’est-ce qui te fait te sentir apprécié·e, toi ? »',
+    interpretationCategories.some((category) => category.id === 'affection') ? 'Pour les gestes physiques, demande et respecte toujours la réponse de l’autre.' : '',
+  ].filter(Boolean).join('\n');
+  const shareText = kind === 'famille' ? familyActionSummary : summary;
   const copyResult = async () => {
-    try { await navigator.clipboard.writeText(summary); toast('Résumé copié.'); }
+    try { await navigator.clipboard.writeText(shareText); toast(kind === 'famille' ? 'Fiche action copiée.' : 'Carte de profil copiée.'); }
     catch { toast('Copie indisponible dans ce navigateur.'); }
+  };
+  const shareProfile = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: kind === 'famille' ? 'Ma fiche action familiale' : 'Ma carte de profil professionnel', text: shareText });
+        return;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
+    }
+    try { await navigator.clipboard.writeText(shareText); toast('Fiche copiée, prête à partager.'); }
+    catch { toast('Partage indisponible dans ce navigateur.'); }
   };
   const emailResult = () => { window.location.href = `mailto:?subject=${encodeURIComponent(`Mon reflet ${resultContext(kind)}`)}&body=${encodeURIComponent(summary)}`; };
   const reset = () => { clearSaved(kind); setConfirmClear(false); navigate(`/sondage-${kind}`); };
@@ -422,26 +484,56 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
   return <>
     <Header />
     <main className="page-wrap fade-in">
-      <Link href="/" className="page-back"><ArrowLeft size={15} /> Retour à l’accueil</Link>
-      <section className="result-hero">
-        <span className="eyebrow">Votre reflet · {resultContextTitle(kind)}</span>
-        <h1>{tiedAtTop ? 'Plusieurs façons comptent pour vous.' : <>Vous vous sentez apprécié·e quand on vous <em style={{ color: '#cf8067', fontStyle: 'italic' }}>{primary.short.toLowerCase()}.</em></>}</h1>
-        <p>{tiedAtTop
-          ? <>Vos réponses font ressortir à égalité <strong>{leaders.map((category) => category.label.toLowerCase()).join(', ')}</strong>. Voici ce que ces préférences peuvent signifier et quelques exemples.</>
-          : <>Votre préférence qui ressort le plus aujourd’hui est <strong>{primary.label.toLowerCase()}</strong>. Une autre façon de vous rejoindre compte aussi : <strong>{secondary.label.toLowerCase()}</strong>.</>}</p>
-      </section>
-      <div className="result-content">
-        <section className="result-panel"><span className="eyebrow">Vos cinq préférences</span><h2>Un aperçu, sans classement.</h2><p className="small-note">Les pourcentages représentent la part de choix associés à chaque façon de recevoir de l’attention. Ils ne mesurent pas votre valeur.</p>
-          {categories.map((category) => <div className="score-row" key={category.id} data-testid={`score-${category.id}`}><div className="score-label"><strong>{category.label}</strong><span>{result.percentages[category.id]} %</span></div><div className="scorebar"><span style={{ width: `${result.percentages[category.id]}%`, background: category.color }} /></div></div>)}
+      <PrintProfileSheet kind={kind} categories={categories} result={result} interpretationCategories={interpretationCategories} />
+      <div className="screen-result">
+        <Link href="/" className="page-back"><ArrowLeft size={15} /> Retour à l’accueil</Link>
+        <section className="result-hero">
+          <span className="eyebrow">Votre reflet · {resultContextTitle(kind)}</span>
+          <h1>{tiedAtTop ? 'Plusieurs façons comptent pour vous.' : <>Vous vous sentez apprécié·e quand on vous <em style={{ color: '#cf8067', fontStyle: 'italic' }}>{primary.short.toLowerCase()}.</em></>}</h1>
+          <p>{tiedAtTop
+            ? <>Vos réponses font ressortir à égalité <strong>{leaders.map((category) => category.label.toLowerCase()).join(', ')}</strong>. Voici ce que ces préférences peuvent signifier et quelques exemples.</>
+            : <>Votre préférence qui ressort le plus aujourd’hui est <strong>{primary.label.toLowerCase()}</strong>. Une autre façon de vous rejoindre compte aussi : <strong>{secondary.label.toLowerCase()}</strong>.</>}</p>
         </section>
-        <section className="result-panel"><span className="eyebrow">Selon vos réponses</span><h2>Interprétation et exemples</h2>
-          {interpretationCategories.map((category, i) => <div className="insight" key={category.id}><span className="eyebrow">{tiedAtTop ? 'À égalité en tête' : i === 0 ? 'Votre préférence la plus marquée' : 'Une préférence secondaire'}</span><h3>{category.label}</h3><p>{category.intro}</p><ul>{category.examples.map((example) => <li key={example}>{example}</li>)}</ul>{category.hurts && <><h4>Ce qui peut blesser</h4><ul>{category.hurts.map((item) => <li key={item}>{item}</li>)}</ul></>}{category.note && <><h4>{category.noteLabel ?? 'À noter'}</h4><p>{category.note}</p></>}</div>)}
-        </section>
+        {kind === 'famille' ? <section className="profile-card family-action-card" id="family-action-sheet" data-testid="family-action-sheet">
+          <div className="profile-card-overline"><span className="eyebrow">Fiche action · famille</span><span>À partager avec vos proches</span></div>
+          <h2>Pour mieux se comprendre à la maison</h2>
+          <p className="profile-card-intro">Voici des gestes concrets qui peuvent m’aider à me sentir apprécié·e. Vous pouvez en parler avec votre partenaire, vos enfants ou une personne proche.</p>
+          <div className="profile-card-actions-list">
+            {interpretationCategories.map((category) => <article className="profile-action-item" key={category.id}>
+              <h3>{category.label} <span>{result.percentages[category.id]} %</span></h3>
+              <ul>{category.examples.slice(0, 2).map((example) => <li key={example}>{example}</li>)}</ul>
+            </article>)}
+          </div>
+          <div className="conversation-prompt"><strong>Pour commencer la conversation</strong><p>« Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »</p></div>
+          {interpretationCategories.some((category) => category.id === 'affection') && <p className="profile-card-consent">Les gestes physiques ne conviennent que s’ils sont souhaités. Demandez, écoutez et respectez les limites de chacun·e.</p>}
+          <div className="profile-card-buttons"><button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager avec mes proches</button><button className="button button-light" onClick={copyResult} data-testid="button-copy-result"><Link2 size={16} /> Copier la fiche action</button></div>
+        </section> : <section className="profile-card work-profile-card" data-testid="work-profile-card">
+          <div className="profile-card-overline"><span className="eyebrow">Carte de profil · entreprise</span><span>À partager au travail</span></div>
+          <h2>{profileCardCategories.map((category) => category.label).join(' · ')}</h2>
+          <p className="profile-card-intro">{profileCardCategories.map((category) => category.intro).join(' ')}</p>
+          <div className="profile-card-actions-list">
+            {profileCardCategories.map((category) => <article className="profile-action-item" key={category.id}>
+              <h3>Pour reconnaître {category.label.toLowerCase()} <span>{result.percentages[category.id]} %</span></h3>
+              <ul>{category.examples.slice(0, 3).map((example) => <li key={example}>{example}</li>)}</ul>
+              {category.note && <p className="profile-card-consent"><strong>{category.noteLabel ?? 'À noter'} :</strong> {category.note}</p>}
+            </article>)}
+          </div>
+          {!tiedAtTop && <p className="profile-card-secondary"><strong>Une préférence secondaire :</strong> {secondary.label} ({result.percentages[secondary.id]} %)</p>}
+          <div className="profile-card-buttons"><button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager ma carte</button><button className="button button-light" onClick={copyResult} data-testid="button-copy-result"><Link2 size={16} /> Copier la carte de profil</button></div>
+        </section>}
+        <div className="result-content">
+          <section className="result-panel"><span className="eyebrow">Vos cinq préférences</span><h2>Un aperçu, sans classement.</h2><p className="small-note">Les pourcentages représentent la part de choix associés à chaque façon de recevoir de l’attention. Ils ne mesurent pas votre valeur.</p>
+            {categories.map((category) => <div className="score-row" key={category.id} data-testid={`score-${category.id}`}><div className="score-label"><strong>{category.label}</strong><span>{result.percentages[category.id]} %</span></div><div className="scorebar"><span style={{ width: `${result.percentages[category.id]}%`, background: category.color }} /></div></div>)}
+          </section>
+          <section className="result-panel"><span className="eyebrow">Selon vos réponses</span><h2>Interprétation et exemples</h2>
+            {interpretationCategories.map((category, i) => <div className="insight" key={category.id}><span className="eyebrow">{tiedAtTop ? 'À égalité en tête' : i === 0 ? 'Votre préférence la plus marquée' : 'Une préférence secondaire'}</span><h3>{category.label}</h3><p>{category.intro}</p><ul>{category.examples.map((example) => <li key={example}>{example}</li>)}</ul>{category.hurts && <><h4>Ce qui peut blesser</h4><ul>{category.hurts.map((item) => <li key={item}>{item}</li>)}</ul></>}{category.note && <><h4>{category.noteLabel ?? 'À noter'}</h4><p>{category.note}</p></>}</div>)}
+          </section>
+        </div>
+        {kind === 'famille' && <div className="notice"><strong>Rappel de consentement :</strong> l’affection physique ne convient que si elle est souhaitée par toutes les personnes concernées. Demandez, écoutez et respectez les limites, sans exception.</div>}
+        <div className="notice"><strong>À garder en tête.</strong> Ceci est une aide à la réflexion, pas un test clinique ni un outil psychométrique validé. Vos préférences peuvent évoluer et ne résument pas votre personnalité. Ce projet n’est pas affilié à Gary Chapman ni à son éditeur.</div>
+        <div className="result-actions"><button className="button button-primary" onClick={() => window.print()} data-testid="button-print-result"><Printer size={16} /> Fiche PDF · 1 page</button><button className="button button-light" onClick={emailResult} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button><Link className="button button-light" href={`/sondage-${kind}`}><RotateCcw size={16} /> Refaire le questionnaire</Link><button className="button button-quiet" onClick={() => setConfirmClear(true)} data-testid="button-delete-result">Effacer mon résultat</button></div>
+        <p className="small-note" style={{ marginTop: 15 }}>« Préparer un courriel » ouvre votre application de messagerie avec le résumé prérempli. L’application n’envoie aucun message.</p>
       </div>
-      {kind === 'famille' && <div className="notice"><strong>Rappel de consentement :</strong> l’affection physique ne convient que si elle est souhaitée par toutes les personnes concernées. Demandez, écoutez et respectez les limites, sans exception.</div>}
-      <div className="notice"><strong>À garder en tête.</strong> Ceci est une aide à la réflexion, pas un test clinique ni un outil psychométrique validé. Vos préférences peuvent évoluer et ne résument pas votre personnalité. Ce projet n’est pas affilié à Gary Chapman ni à son éditeur.</div>
-      <div className="result-actions"><button className="button button-primary" onClick={() => window.print()} data-testid="button-print-result"><Printer size={16} /> Imprimer / PDF</button><button className="button button-light" onClick={copyResult} data-testid="button-copy-result"><Link2 size={16} /> Copier le résumé</button><button className="button button-light" onClick={emailResult} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button><Link className="button button-light" href={`/sondage-${kind}`}><RotateCcw size={16} /> Refaire le questionnaire</Link><button className="button button-quiet" onClick={() => setConfirmClear(true)} data-testid="button-delete-result">Effacer mon résultat</button></div>
-      <p className="small-note" style={{ marginTop: 15 }}>« Préparer un courriel » ouvre votre application de messagerie avec le résumé prérempli. L’application n’envoie aucun message.</p>
     </main>
     <Footer />
     {confirmClear && <ConfirmDialog title="Effacer ce résultat ?" description="Les réponses et le résultat de ce questionnaire seront supprimés de ce navigateur." onCancel={() => setConfirmClear(false)} onConfirm={reset} />}
