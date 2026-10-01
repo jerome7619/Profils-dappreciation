@@ -401,6 +401,22 @@ button:focus-visible, a:focus-visible { outline: 3px solid hsl(var(--accent)); o
  .result-hero:after { font-size:100px;right:1%; }.survey-controls .small-note { display:none; }
   .profile-card-actions-list { grid-template-columns:1fr; }
 }
+@media(min-width:761px) and (max-height:1200px) {
+  .topbar { padding:12px 30px; }
+  .page-wrap { padding:12px 28px 34px; }
+  .survey-head { margin:14px 0 12px; }
+  .survey-head h1 { font-size:clamp(40px,4vw,50px); line-height:1.04; margin:8px 0; }
+  .survey-head p { font-size:14px; line-height:1.4; }
+  .notice { margin:10px 0; padding:9px 14px; font-size:11px; line-height:1.4; }
+  .progress-wrap { margin:12px 0 6px; font-size:11px; }
+  .question-card { margin:14px 0; padding:18px; border-radius:18px; }
+  .question-top { margin-bottom:10px; }
+  .question-card h2 { font-size:clamp(22px,2vw,26px); line-height:1.2; margin:0 0 14px; }
+  .answer-grid { gap:10px; }
+  .answer-option { min-height:62px; padding:12px 14px; gap:12px; font-size:13px; line-height:1.4; }
+  .choice-letter { flex-basis:28px; height:28px; }
+  .survey-controls .button { padding:10px 14px; }
+}
 @media(max-height:700px) {
   .site-shell { min-height:100dvh; overflow:visible; }
   .topbar { padding:8px 22px; }
