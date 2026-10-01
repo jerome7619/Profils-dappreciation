@@ -7,7 +7,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 
 type SurveyKind = 'famille' | 'travail';
-type Category = { id: string; label: string; short: string; color: string; intro: string; examples: string[]; hurts?: string[] };
+type Category = { id: string; label: string; short: string; color: string; intro: string; examples: string[]; hurts?: string[]; note?: string; noteLabel?: string };
 type AnswerOption = { text: string; categoryId: string };
 type Question = { prompt: string; options: AnswerOption[] };
 type Result = { kind: SurveyKind; answers: Record<number, string>; scores: Record<string, number>; primary: string; secondary: string; leaders?: string[]; percentages: Record<string, number>; completedAt: string };
@@ -103,75 +103,112 @@ const familyQuestions: Question[] = [
   },
 ];
 const workCategories: Category[] = [
-  { id: 'reconnaissance', label: 'Reconnaissance verbale précise', short: 'Un retour qui nomme', color: '#315e52', intro: 'Un retour sincère, concret et lié à votre contribution vous aide à voir que votre travail a été remarqué.', examples: ['Nommer un résultat ou une compétence de façon précise.', 'Recevoir un merci directement lié à votre contribution.', 'Entendre clairement en quoi votre travail a aidé le collectif.'] },
-  { id: 'ecoute', label: 'Écoute et temps d’échange', short: 'Une attention réelle', color: '#cf8067', intro: 'Avoir un espace d’échange où l’on vous écoute vraiment peut vous aider à vous sentir considéré·e et compris·e.', examples: ['Prévoir un moment sans interruptions pour faire le point.', 'Être écouté·e avant qu’une solution soit proposée.', 'Avoir une conversation utile sur vos idées et vos priorités.'] },
-  { id: 'attentions', label: 'Attentions symboliques', short: 'Un signe de considération', color: '#bd9b43', intro: 'Un signe simple et bien choisi peut rendre visible l’attention portée à votre contribution.', examples: ['Recevoir un mot de remerciement écrit et personnel.', 'Marquer une étape avec une petite attention collective.', 'Recevoir un souvenir symbolique lié à un projet accompli.'] },
-  { id: 'soutien', label: 'Soutien concret et collaboration', short: 'Avancer ensemble', color: '#70959a', intro: 'Une aide pratique, une ressource ou un coup de main au bon moment peut vous montrer que vous n’avez pas à tout porter seul·e.', examples: ['Obtenir un coup de main pour débloquer une tâche.', 'Partager la charge quand les priorités s’accumulent.', 'Recevoir les moyens ou informations nécessaires pour avancer.'] },
-  { id: 'confiance', label: 'Confiance et autonomie', short: 'La latitude d’agir', color: '#a57b91', intro: 'La confiance, la marge de manœuvre et la responsabilité peuvent être des marques fortes de reconnaissance pour vous.', examples: ['Avoir le choix de la méthode pour atteindre un objectif.', 'Se voir confier une responsabilité avec une vraie latitude.', 'Pouvoir organiser son temps dans un cadre clair.'] },
+  { id: 'parole', label: 'Paroles valorisantes', short: 'exprime sa reconnaissance', color: '#315e52', intro: 'Vous appréciez recevoir de la reconnaissance verbale et des commentaires positifs.', examples: ['Dire merci.', 'Souligner vos réalisations.', 'Exprimer son appréciation.'], note: 'L’absence de rétroaction peut être perçue comme un manque de reconnaissance.', noteLabel: 'Attention' },
+  { id: 'temps', label: 'Moments de qualité', short: 'consacre du temps et vous écoute réellement', color: '#cf8067', intro: 'Vous appréciez les échanges sincères et le temps accordé aux relations.', examples: ['Prendre du temps pour discuter.', 'Solliciter votre opinion.', 'Créer des moments d’échange significatifs.'], note: 'Vous pouvez être frustré·e lorsque tout va trop vite ou que les échanges deviennent uniquement transactionnels.', noteLabel: 'Attention' },
+  { id: 'attentions', label: 'Attentions symboliques', short: 'fait un geste qui vous ressemble', color: '#bd9b43', intro: 'Vous appréciez les gestes qui démontrent que l’on a pensé à vous.', examples: ['Une carte de remerciement.', 'Une mention spéciale.', 'Une petite attention lors d’un accomplissement.'], note: 'La valeur du geste compte moins que l’intention derrière celui-ci.', noteLabel: 'À retenir' },
+  { id: 'aide', label: 'Services rendus', short: 'offre une aide concrète', color: '#70959a', intro: 'Vous appréciez les actions concrètes et l’entraide.', examples: ['Offrir de l’aide.', 'Partager la charge de travail.', 'Respecter ses engagements.'], note: 'Vous êtes sensible au manque de collaboration.', noteLabel: 'Attention' },
+  { id: 'connexion', label: 'Connexion humaine', short: 'crée une connexion humaine authentique', color: '#a57b91', intro: 'Vous valorisez les relations authentiques et un climat humain positif.', examples: ['Créer un climat accueillant.', 'Développer la confiance.', 'Favoriser les liens au sein de l’équipe.'], note: 'Les environnements impersonnels peuvent rapidement vous démobiliser.', noteLabel: 'Attention' },
 ];
 
-const situations = [
-  'Après une journée qui vous a demandé beaucoup d’énergie,',
-  'Quand vous venez de terminer quelque chose qui vous tenait à cœur,',
-  'À un moment où vous doutez un peu de vous,',
-  'Quand vous avez fait un effort que peu de personnes ont remarqué,',
-  'Pour rendre une journée ordinaire plus agréable,',
-  'Après une petite réussite dont vous êtes content·e,',
-  'Quand vous traversez une période particulièrement chargée,',
-  'Pour vous montrer que quelqu’un a pensé à vous,',
-  'Quand vous avez besoin de vous sentir soutenu·e,',
-  'Après avoir consacré du temps à quelque chose d’important,',
-  'Pour célébrer une étape, même modeste,',
-  'Quand vous avez besoin de retrouver confiance,',
-  'Pour vous aider à vous sentir proche des autres,',
-  'Quand vous avez accompli quelque chose avec persévérance,',
-  'Pour vous faire sentir à votre place dans un groupe,',
-  'Quand il y a beaucoup à faire et peu de temps,',
-  'Après une conversation ou un moment marquant,',
-  'Pour vous encourager à poursuivre un projet,',
-  'Quand vous vous sentez un peu à l’écart,',
-  'Pour marquer un moment qui compte pour vous,',
-  'Quand une journée ne s’est pas passée comme prévu,',
-  'Pour vous aider à démarrer quelque chose de nouveau,',
-  'Quand vous avez apporté votre aide à quelqu’un,',
-  'Pour vous remercier d’un effort récent,',
-  'Quand vous pensez à ce qui vous fait vous sentir apprécié·e,',
+const workQuestions: Question[] = [
+  {
+    prompt: 'Je me sens le plus reconnu·e lorsque :',
+    options: [
+      { categoryId: 'parole', text: 'On me dit à quel point ma contribution est appréciée.' },
+      { categoryId: 'temps', text: 'Une personne me consacre du temps et m’écoute réellement.' },
+      { categoryId: 'attentions', text: 'Je reçois une attention ou une marque de reconnaissance significative.' },
+      { categoryId: 'aide', text: 'Quelqu’un m’offre de l’aide concrète lorsque j’en ai besoin.' },
+      { categoryId: 'connexion', text: 'Je ressens une connexion humaine authentique avec mes collègues.' },
+    ],
+  },
+  {
+    prompt: 'Lors d’une période plus exigeante au travail, ce qui me motive le plus est :',
+    options: [
+      { categoryId: 'parole', text: 'Recevoir des encouragements.' },
+      { categoryId: 'temps', text: 'Avoir un moment d’échange avec quelqu’un.' },
+      { categoryId: 'attentions', text: 'Recevoir un geste d’appréciation.' },
+      { categoryId: 'aide', text: 'Obtenir du soutien concret.' },
+      { categoryId: 'connexion', text: 'Sentir que je fais partie d’une équipe soudée.' },
+    ],
+  },
+  {
+    prompt: 'Dans mon milieu de travail, j’apprécie particulièrement lorsqu’un collègue :',
+    options: [
+      { categoryId: 'parole', text: 'Souligne mes efforts.' },
+      { categoryId: 'temps', text: 'Prend le temps de discuter avec moi.' },
+      { categoryId: 'attentions', text: 'A une attention spéciale à mon égard.' },
+      { categoryId: 'aide', text: 'M’offre son aide spontanément.' },
+      { categoryId: 'connexion', text: 'Crée un climat chaleureux et humain.' },
+    ],
+  },
+  {
+    prompt: 'Lorsqu’un projet est terminé avec succès, je préfère :',
+    options: [
+      { categoryId: 'parole', text: 'Recevoir de la reconnaissance verbale.' },
+      { categoryId: 'temps', text: 'Faire un retour d’équipe et partager l’expérience.' },
+      { categoryId: 'attentions', text: 'Recevoir une marque de reconnaissance.' },
+      { categoryId: 'aide', text: 'Voir les efforts de chacun reconnus par des actions concrètes.' },
+      { categoryId: 'connexion', text: 'Célébrer ensemble dans une ambiance conviviale.' },
+    ],
+  },
+  {
+    prompt: 'Ce qui me démotive le plus est :',
+    options: [
+      { categoryId: 'parole', text: 'Le manque de reconnaissance.' },
+      { categoryId: 'temps', text: 'Le manque de temps pour échanger.' },
+      { categoryId: 'attentions', text: 'Le sentiment que mes efforts passent inaperçus.' },
+      { categoryId: 'aide', text: 'Le manque de collaboration.' },
+      { categoryId: 'connexion', text: 'Une ambiance froide ou distante.' },
+    ],
+  },
+  {
+    prompt: 'Je me sens particulièrement apprécié·e lorsque :',
+    options: [
+      { categoryId: 'parole', text: 'On exprime verbalement sa gratitude.' },
+      { categoryId: 'temps', text: 'On m’accorde son attention complète.' },
+      { categoryId: 'attentions', text: 'On souligne ma contribution de façon personnelle.' },
+      { categoryId: 'aide', text: 'On me soutient concrètement.' },
+      { categoryId: 'connexion', text: 'Je ressens un véritable esprit d’équipe.' },
+    ],
+  },
+  {
+    prompt: 'Lorsque je souhaite reconnaître un collègue, je tends naturellement à :',
+    options: [
+      { categoryId: 'parole', text: 'Le complimenter.' },
+      { categoryId: 'temps', text: 'Lui consacrer du temps.' },
+      { categoryId: 'attentions', text: 'Lui offrir une petite attention.' },
+      { categoryId: 'aide', text: 'Lui donner un coup de main.' },
+      { categoryId: 'connexion', text: 'Créer une connexion positive avec lui.' },
+    ],
+  },
+  {
+    prompt: 'Quelle situation vous ferait le plus plaisir ?',
+    options: [
+      { categoryId: 'parole', text: 'Recevoir un message de reconnaissance.' },
+      { categoryId: 'temps', text: 'Avoir une discussion authentique avec un collègue.' },
+      { categoryId: 'attentions', text: 'Recevoir une attention symbolique.' },
+      { categoryId: 'aide', text: 'Recevoir un soutien concret dans votre travail.' },
+      { categoryId: 'connexion', text: 'Participer à une activité d’équipe qui renforce les liens.' },
+    ],
+  },
 ];
-
-const optionIdeas: Record<string, string[]> = {
-  parole: ['entendre des mots sincères qui disent précisément ce que vous avez bien fait.', 'recevoir un merci qui nomme l’effort que vous avez fourni.', 'qu’on vous dise avec des mots pourquoi votre présence est importante.', 'entendre un encouragement honnête qui vous aide à continuer.', 'qu’une personne vous fasse un compliment vrai et bien précis.'],
-  temps: ['partager un moment où l’autre est pleinement disponible pour vous.', 'prendre le temps de parler sans être interrompu·e.', 'faire ensemble une activité simple, en étant vraiment présent·e.', 'avoir une conversation où l’on vous écoute jusqu’au bout.', 'passer un moment calme à deux, sans se presser.'],
-  attentions: ['recevoir un petit signe choisi spécialement pour vous.', 'trouver un mot, un dessin ou un objet qui rappelle un souvenir partagé.', 'recevoir une petite surprise qui montre qu’on a pensé à vous.', 'garder un souvenir symbolique d’un moment vécu ensemble.', 'découvrir une attention simple, préparée avec soin.'],
-  aide: ['voir quelqu’un prendre en charge une tâche qui vous pèse.', 'recevoir un coup de main pratique sans devoir tout organiser.', 'qu’une personne vous aide à faire avancer ce qui est urgent.', 'trouver une tâche déjà faite pour vous simplifier la journée.', 'pouvoir compter sur un soutien concret au bon moment.'],
-  affection: ['qu’on vous propose un câlin, en respectant votre réponse.', 'recevoir un geste tendre si vous en avez envie à ce moment-là.', 'être assis·e près d’une personne de confiance si cela vous convient.', 'pouvoir partager une proximité affectueuse que vous souhaitez.', 'recevoir un contact réconfortant, seulement s’il est bienvenu pour vous.'],
-  reconnaissance: ['recevoir un retour qui nomme précisément votre contribution.', 'entendre un merci concret qui fait référence à votre travail.', 'savoir clairement ce que votre effort a apporté au résultat.', 'recevoir un compliment professionnel sincère et précis.', 'qu’une personne souligne une compétence que vous avez mobilisée.'],
-  ecoute: ['avoir un moment d’échange où la personne est pleinement à l’écoute.', 'pouvoir parler de vos idées sans être pressé·e ni interrompu·e.', 'être écouté·e avec attention avant qu’on cherche des solutions.', 'prendre le temps de faire le point dans une conversation utile.', 'avoir un espace calme pour partager ce qui compte pour vous.'],
-  soutien: ['recevoir un coup de main qui débloque concrètement votre travail.', 'partager la charge avec une personne qui propose son aide.', 'obtenir les ressources nécessaires pour avancer sans obstacle.', 'travailler en collaboration pour mener à bien une tâche difficile.', 'savoir qu’une personne peut prendre le relais si nécessaire.'],
-  confiance: ['avoir la latitude de choisir comment vous allez procéder.', 'recevoir une responsabilité avec une vraie marge de décision.', 'pouvoir organiser votre travail à votre manière, dans un cadre clair.', 'sentir qu’on vous fait confiance pour prendre les bonnes décisions.', 'disposer de l’autonomie nécessaire pour mener votre idée à terme.'],
-};
 
 const categoriesFor = (kind: SurveyKind) => kind === 'famille' ? familyCategories : workCategories;
-const makeQuestions = (kind: SurveyKind): Question[] => {
-  if (kind === 'famille') return familyQuestions;
-  const categories = categoriesFor(kind);
-  return situations.map((prompt, index) => {
-    const first = categories[index % 5];
-    const second = categories[(index + 1) % 5];
-    return {
-      prompt: `${prompt} qu’est-ce qui vous ferait le plus de bien ?`,
-      options: [
-        { categoryId: first.id, text: optionIdeas[first.id][Math.floor(index / 5)] },
-        { categoryId: second.id, text: optionIdeas[second.id][Math.floor(index / 5)] },
-      ],
-    };
-  });
-};
+const makeQuestions = (kind: SurveyKind): Question[] => kind === 'famille' ? familyQuestions : workQuestions;
+const surveyLabel = (kind: SurveyKind) => kind === 'famille' ? 'famille' : 'entreprise';
+const resultContext = (kind: SurveyKind) => kind === 'famille' ? 'en famille' : 'en entreprise';
+const resultContextTitle = (kind: SurveyKind) => kind === 'famille' ? 'En famille' : 'En entreprise';
 
 const legacyFamilyStorageKey = 'profils-appreciation-famille-v1';
-const storageKey = (kind: SurveyKind) => `profils-appreciation-${kind}-${kind === 'famille' ? 'v2' : 'v1'}`;
+const legacyWorkStorageKey = 'profils-appreciation-travail-v1';
+const storageKey = (kind: SurveyKind) => `profils-appreciation-${kind}-v2`;
+const hasLegacySaved = (kind: SurveyKind) => {
+  try { return Boolean(localStorage.getItem(kind === 'famille' ? legacyFamilyStorageKey : legacyWorkStorageKey)); }
+  catch { return false; }
+};
 function clearSaved(kind: SurveyKind) {
   localStorage.removeItem(storageKey(kind));
-  if (kind === 'famille') localStorage.removeItem(legacyFamilyStorageKey);
+  localStorage.removeItem(kind === 'famille' ? legacyFamilyStorageKey : legacyWorkStorageKey);
 }
 function readSaved(kind: SurveyKind): SavedSurvey {
   try {
@@ -230,8 +267,8 @@ function Home({ toast }: { toast: (message: string) => void }) {
   const familyUrl = `${window.location.origin}/sondage-famille`;
   const familySaved = readSaved('famille');
   const workSaved = readSaved('travail');
-  const hasLegacyFamilyData = Boolean(localStorage.getItem(legacyFamilyStorageKey));
-  const hasSaved = hasLegacyFamilyData || Object.keys(familySaved.answers).length > 0 || Object.keys(workSaved.answers).length > 0;
+  const hasLegacyData = hasLegacySaved('famille') || hasLegacySaved('travail');
+  const hasSaved = hasLegacyData || Object.keys(familySaved.answers).length > 0 || Object.keys(workSaved.answers).length > 0;
   const copyFamilyLink = async () => {
     try { await navigator.clipboard.writeText(familyUrl); toast('Lien du questionnaire famille copié.'); }
     catch { toast('Copie indisponible dans ce navigateur.'); }
@@ -255,18 +292,18 @@ function Home({ toast }: { toast: (message: string) => void }) {
           <span className="eyebrow">Des façons différentes de se sentir apprécié·e</span>
           <h1>On ne se sent pas tous aimé·e de la <em>même façon.</em></h1>
           <p>Un espace simple et privé pour découvrir les gestes qui vous font du bien — sans vous enfermer dans une case.</p>
-          <div className="hero-actions"><Link className="button button-primary" href="/sondage-famille">Commencer en famille <ArrowRight size={16} /></Link><Link className="button button-light" href="/sondage-travail">Explorer au travail</Link></div>
+          <div className="hero-actions"><Link className="button button-primary" href="/sondage-famille">Commencer en famille <ArrowRight size={16} /></Link><Link className="button button-light" href="/sondage-travail">Explorer en entreprise</Link></div>
         </div>
         <div className="hero-art" aria-label="Illustration abstraite de liens et de proximité">
           <div className="orbit" /><div className="orbit orbit-two" /><span className="art-note">à sa manière</span><span className="hero-leaf">⌁</span><span className="art-stamp">être vu·e<br />à sa façon</span>
         </div>
       </section>
-      <div className="intro-strip"><Sparkles size={17} /><span>8 questions en famille, 25 au travail. Aucune bonne ou mauvaise réponse : une occasion de mieux se dire les choses.</span></div>
+      <div className="intro-strip"><Sparkles size={17} /><span>8 questions en famille, 8 en entreprise. Aucune bonne ou mauvaise réponse : une occasion de mieux se dire les choses.</span></div>
       <section id="questionnaires" className="section">
         <div className="section-heading"><span className="eyebrow">Deux espaces, deux contextes</span><h2>Le contexte change. Vos besoins aussi.</h2><p>Choisissez le questionnaire qui vous ressemble aujourd’hui. Ils explorent des façons différentes de recevoir de l’attention, dans le respect des limites de chacun·e.</p></div>
         <div className="survey-grid">
           <Link href="/sondage-famille" className="survey-card family" data-testid="link-family-survey"><div><span className="eyebrow">8 questions · À la maison et avec les proches</span><h3>Questionnaire famille</h3><p>Paroles valorisantes, moments de qualité, cadeaux, services rendus et affection physique souhaitée.</p></div><span className="card-arrow"><ArrowRight size={19} /></span></Link>
-          <Link href="/sondage-travail" className="survey-card work" data-testid="link-work-survey"><div><span className="eyebrow">Au travail, sans contact physique</span><h3>Questionnaire travail</h3><p>Une reconnaissance précise, de l’écoute, des attentions, du soutien et la confiance d’agir.</p></div><span className="card-arrow"><ArrowRight size={19} /></span></Link>
+          <Link href="/sondage-travail" className="survey-card work" data-testid="link-work-survey"><div><span className="eyebrow">En entreprise, sans contact physique</span><h3>Questionnaire entreprise</h3><p>Paroles valorisantes, moments de qualité, attentions symboliques, services rendus et connexion humaine.</p></div><span className="card-arrow"><ArrowRight size={19} /></span></Link>
         </div>
       </section>
       <section id="partager" className="section" style={{ paddingTop: 5 }}>
@@ -295,6 +332,7 @@ function Survey({ kind, toast }: { kind: SurveyKind; toast: (message: string) =>
   const [saved, setSaved] = useState<SavedSurvey>(() => readSaved(kind));
   const [index, setIndex] = useState(() => Math.min(Object.keys(readSaved(kind).answers).length, questions.length - 1));
   const [confirmClear, setConfirmClear] = useState(false);
+  const hasLegacyData = hasLegacySaved(kind);
   const current = questions[index];
   const answer = saved.answers[index];
   const answeredCount = Math.min(Object.keys(saved.answers).length, questions.length);
@@ -317,7 +355,8 @@ function Survey({ kind, toast }: { kind: SurveyKind; toast: (message: string) =>
     <Header />
     <main className="page-wrap fade-in">
       <Link href="/" className="page-back"><ArrowLeft size={15} /> Retour à l’accueil</Link>
-      <div className="survey-head"><span className="eyebrow">{kind === 'famille' ? 'Questionnaire famille' : 'Questionnaire travail'} · {questions.length} questions</span><h1>{kind === 'famille' ? 'Choisissez la réponse qui vous ressemble le plus.' : 'Choisissez ce qui vous ferait le plus de bien.'}</h1><p>Il n’y a pas de réponse juste ou attendue. Pour chaque question, choisissez une seule proposition, celle qui vous parle le plus aujourd’hui.</p></div>
+      <div className="survey-head"><span className="eyebrow">Questionnaire {surveyLabel(kind)} · {questions.length} questions</span><h1>{kind === 'famille' ? 'Choisissez la réponse qui vous ressemble le plus.' : 'Choisissez ce qui vous ferait le plus de bien.'}</h1><p>Il n’y a pas de réponse juste ou attendue. Pour chaque question, choisissez une seule proposition, celle qui vous parle le plus aujourd’hui.</p></div>
+      {hasLegacyData && <div className="notice" data-testid="notice-legacy-survey-data"><strong>Questionnaire mis à jour :</strong> les réponses de l’ancienne version ne sont pas reprises dans ce nouveau questionnaire. Elles restent enregistrées sur cet appareil; vous pouvez les supprimer avec le bouton « Effacer mes réponses » sur la page d’accueil.</div>}
       {kind === 'famille' && <div className="notice"><strong>À propos du contact physique :</strong> les gestes affectueux ne sont une attention que s’ils sont souhaités. Vous pouvez toujours dire non, changer d’avis, ou préférer une autre forme de proximité. Votre consentement passe avant tout résultat.</div>}
       {kind === 'travail' && <div className="notice"><strong>Un cadre professionnel :</strong> ce questionnaire explore des façons de reconnaître et soutenir le travail. Il n’inclut aucune forme de contact physique.</div>}
       <div className="progress-wrap"><span>Question {index + 1} sur {questions.length}</span><span>{answeredCount} réponse{answeredCount > 1 ? 's' : ''} enregistrée{answeredCount > 1 ? 's' : ''} sur cet appareil</span></div>
@@ -358,7 +397,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
   const interpretationCategories = tiedAtTop ? leaders : [primary, secondary].filter((category): category is Category => Boolean(category));
   const [confirmClear, setConfirmClear] = useState(false);
   const summary = result && primary && secondary ? [
-    `Mon reflet ${kind === 'famille' ? 'en famille' : 'au travail'} — Profils d’appréciation`,
+    `Mon reflet ${resultContext(kind)} — Profils d’appréciation`,
     ...(tiedAtTop
       ? [`Préférences à égalité en tête : ${leaders.map((category) => `${category.label} (${result.percentages[category.id]} %)` ).join(', ')}.`]
       : [`Ma préférence principale : ${primary.label} (${result.percentages[primary.id]} %).`, `Une préférence secondaire : ${secondary.label} (${result.percentages[secondary.id]} %).`]),
@@ -366,6 +405,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
       `${category.label} — ${category.intro}`,
       `Exemples : ${category.examples.slice(0, 2).join(' ; ')}`,
       category.hurts?.length ? `Ce qui peut blesser : ${category.hurts.slice(0, 2).join(' ; ')}` : '',
+      category.note ? `${category.noteLabel ?? 'À noter'} : ${category.note}` : '',
     ].filter(Boolean).join('\n')),
     `Ce résultat est une aide à la réflexion, pas un test psychométrique validé ni un diagnostic. Il peut évoluer.`,
     'Les réponses restent dans le navigateur où le questionnaire a été rempli.',
@@ -374,17 +414,17 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
     try { await navigator.clipboard.writeText(summary); toast('Résumé copié.'); }
     catch { toast('Copie indisponible dans ce navigateur.'); }
   };
-  const emailResult = () => { window.location.href = `mailto:?subject=${encodeURIComponent(`Mon reflet ${kind === 'famille' ? 'en famille' : 'au travail'}`)}&body=${encodeURIComponent(summary)}`; };
+  const emailResult = () => { window.location.href = `mailto:?subject=${encodeURIComponent(`Mon reflet ${resultContext(kind)}`)}&body=${encodeURIComponent(summary)}`; };
   const reset = () => { clearSaved(kind); setConfirmClear(false); navigate(`/sondage-${kind}`); };
   if (!result || !primary || !secondary) return <>
-    <Header /><main className="page-wrap"><div className="empty-state"><span className="brand-mark" style={{ margin: 'auto' }}><HeartHandshake size={21} /></span><h1>Votre reflet est en attente.</h1><p>Répondez aux {questionCount} questions du questionnaire pour découvrir votre résultat. Vos réponses sont conservées uniquement sur cet appareil.</p><Link className="button button-primary" href={`/sondage-${kind}`}>Continuer le questionnaire <ArrowRight size={16} /></Link><div style={{ marginTop: 12 }}><button className="button button-quiet" onClick={() => { clearSaved(kind); toast('Réponses effacées.'); }} data-testid="button-clear-empty">Effacer les réponses enregistrées</button></div></div></main><Footer />
+    <Header /><main className="page-wrap"><div className="empty-state"><span className="brand-mark" style={{ margin: 'auto' }}><HeartHandshake size={21} /></span><h1>Votre reflet est en attente.</h1><p>Répondez aux {questionCount} questions du questionnaire {surveyLabel(kind)} pour découvrir votre résultat. Vos réponses sont conservées uniquement sur cet appareil.</p><Link className="button button-primary" href={`/sondage-${kind}`}>Continuer le questionnaire <ArrowRight size={16} /></Link><div style={{ marginTop: 12 }}><button className="button button-quiet" onClick={() => { clearSaved(kind); toast('Réponses effacées.'); }} data-testid="button-clear-empty">Effacer les réponses enregistrées</button></div></div></main><Footer />
   </>;
   return <>
     <Header />
     <main className="page-wrap fade-in">
       <Link href="/" className="page-back"><ArrowLeft size={15} /> Retour à l’accueil</Link>
       <section className="result-hero">
-        <span className="eyebrow">Votre reflet · {kind === 'famille' ? 'En famille' : 'Au travail'}</span>
+        <span className="eyebrow">Votre reflet · {resultContextTitle(kind)}</span>
         <h1>{tiedAtTop ? 'Plusieurs façons comptent pour vous.' : <>Vous vous sentez apprécié·e quand on vous <em style={{ color: '#cf8067', fontStyle: 'italic' }}>{primary.short.toLowerCase()}.</em></>}</h1>
         <p>{tiedAtTop
           ? <>Vos réponses font ressortir à égalité <strong>{leaders.map((category) => category.label.toLowerCase()).join(', ')}</strong>. Voici ce que ces préférences peuvent signifier et quelques exemples.</>
@@ -395,7 +435,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
           {categories.map((category) => <div className="score-row" key={category.id} data-testid={`score-${category.id}`}><div className="score-label"><strong>{category.label}</strong><span>{result.percentages[category.id]} %</span></div><div className="scorebar"><span style={{ width: `${result.percentages[category.id]}%`, background: category.color }} /></div></div>)}
         </section>
         <section className="result-panel"><span className="eyebrow">Selon vos réponses</span><h2>Interprétation et exemples</h2>
-          {interpretationCategories.map((category, i) => <div className="insight" key={category.id}><span className="eyebrow">{tiedAtTop ? 'À égalité en tête' : i === 0 ? 'Votre préférence la plus marquée' : 'Une préférence secondaire'}</span><h3>{category.label}</h3><p>{category.intro}</p><ul>{category.examples.map((example) => <li key={example}>{example}</li>)}</ul>{category.hurts && <><h4>Ce qui peut blesser</h4><ul>{category.hurts.map((item) => <li key={item}>{item}</li>)}</ul></>}</div>)}
+          {interpretationCategories.map((category, i) => <div className="insight" key={category.id}><span className="eyebrow">{tiedAtTop ? 'À égalité en tête' : i === 0 ? 'Votre préférence la plus marquée' : 'Une préférence secondaire'}</span><h3>{category.label}</h3><p>{category.intro}</p><ul>{category.examples.map((example) => <li key={example}>{example}</li>)}</ul>{category.hurts && <><h4>Ce qui peut blesser</h4><ul>{category.hurts.map((item) => <li key={item}>{item}</li>)}</ul></>}{category.note && <><h4>{category.noteLabel ?? 'À noter'}</h4><p>{category.note}</p></>}</div>)}
         </section>
       </div>
       {kind === 'famille' && <div className="notice"><strong>Rappel de consentement :</strong> l’affection physique ne convient que si elle est souhaitée par toutes les personnes concernées. Demandez, écoutez et respectez les limites, sans exception.</div>}
