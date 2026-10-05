@@ -13,6 +13,9 @@ type Question = { prompt: string; options: AnswerOption[] };
 type Result = { kind: SurveyKind; answers: Record<number, string>; scores: Record<string, number>; primary: string; secondary: string; leaders?: string[]; percentages: Record<string, number>; completedAt: string };
 type SavedSurvey = { answers: Record<number, string>; result?: Result };
 
+const FRENCH_BOOK_URL = 'https://www.leslibraires.ca/livres/5-langages-de-l-amour-les-gary-chapman-9782848992723.html';
+const OFFICIAL_QUIZ_URL = 'https://5lovelanguages.com/quizzes/love-language';
+
 const familyCategories: Category[] = [
   { id: 'parole', label: 'Paroles valorisantes', short: 'Les mots qui comptent', color: '#315e52', intro: 'Les personnes de cette catégorie se sentent aimées lorsqu’elles reçoivent des encouragements, des compliments, de la reconnaissance ou des mots d’appréciation.', examples: ['« Je suis fier·ère de toi. »', '« Merci pour tout ce que tu fais. »', '« J’apprécie ta présence. »'], hurts: ['Les critiques constantes.', 'Les paroles dures ou humiliantes.', 'Le manque de reconnaissance.'] },
   { id: 'temps', label: 'Moments de qualité', short: 'Une présence attentive', color: '#cf8067', intro: 'Pour ces personnes, l’attention complète vaut beaucoup. La présence et le temps partagé comptent davantage que les cadeaux ou les gestes matériels.', examples: ['Partager un repas sans téléphone.', 'Faire une promenade ensemble.', 'Avoir une conversation profonde.'], hurts: ['L’indifférence.', 'Les distractions constantes.', 'Les annulations répétées.'] },
@@ -258,7 +261,16 @@ function Header() {
 }
 
 function Footer() {
-  return <footer className="footer"><span>Un outil pour ouvrir la conversation, pas pour vous définir.</span><span>Vos réponses restent dans ce navigateur.</span></footer>;
+  return <footer className="footer">
+    <div className="footer-copy">
+      <span>Un outil pour ouvrir la conversation, pas pour vous définir.</span>
+      <span className="footer-attribution">
+        Inspiration : le cadre des cinq langages présenté par Gary Chapman dans <a className="source-link" href={FRENCH_BOOK_URL} target="_blank" rel="noopener noreferrer">Les 5 langages de l’amour (livre imprimé en français)</a>.
+        {' '}<a className="source-link" href={OFFICIAL_QUIZ_URL} target="_blank" rel="noopener noreferrer">Voir le quiz officiel</a>. Questionnaire indépendant, non affilié à Gary Chapman ni à ses éditeurs.
+      </span>
+    </div>
+    <span>Vos réponses restent dans ce navigateur.</span>
+  </footer>;
 }
 
 function Home({ toast }: { toast: (message: string) => void }) {
@@ -412,7 +424,9 @@ function PrintProfileSheet({ kind, categories, result, interpretationCategories 
       <span>« Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »</span>
       {interpretationCategories.some((category) => category.id === 'affection') && <small>Les gestes physiques ne conviennent que s’ils sont souhaités par toutes les personnes concernées. Le consentement et les limites passent avant toute préférence.</small>}
     </aside>}
-    <footer className="print-sheet-footer">Un point de départ pour discuter, pas une étiquette ni un diagnostic. Les préférences peuvent évoluer.</footer>
+    <footer className="print-sheet-footer">
+      Inspiré de l’ouvrage <a className="source-link" href={FRENCH_BOOK_URL}>Les 5 langages de l’amour</a> de Gary Chapman. Questionnaire indépendant, non affilié.
+    </footer>
   </section>;
 }
 
@@ -471,6 +485,11 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
       : '',
     '',
     'Ce résultat est une aide à la réflexion et à la conversation, pas un diagnostic. Les préférences peuvent évoluer.',
+    '',
+    'Source d’inspiration : le cadre des cinq langages présenté par Gary Chapman dans Les 5 langages de l’amour.',
+    `Livre imprimé en français : ${FRENCH_BOOK_URL}`,
+    'Questionnaire indépendant, distinct du quiz officiel et non affilié à Gary Chapman ni à ses éditeurs :',
+    OFFICIAL_QUIZ_URL,
   ].filter(Boolean).join('\n') : '';
   const emailProfilesHtml = interpretationCategories.map((category) => `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;border:1px solid #dce2da;border-radius:10px;background:#ffffff;">
@@ -520,7 +539,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${emailScoresHtml}</table>
           </td></tr>
           ${kind === 'famille' ? `<tr><td style="padding:14px 4px 4px;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;color:#536157;"><strong>Pour ouvrir la conversation :</strong> « Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »${interpretationCategories.some((category) => category.id === 'affection') ? '<br><br>Les gestes physiques ne conviennent que s’ils sont souhaités. Le consentement et les limites passent avant toute préférence.' : ''}</td></tr>` : ''}
-          <tr><td style="padding:14px 4px;font-family:Arial,sans-serif;font-size:11px;line-height:1.45;color:#69766d;">Un point de départ pour discuter, pas une étiquette ni un diagnostic. Les préférences peuvent évoluer.</td></tr>
+          <tr><td style="padding:14px 4px;font-family:Arial,sans-serif;font-size:11px;line-height:1.45;color:#69766d;">Un point de départ pour discuter, pas une étiquette ni un diagnostic. Les préférences peuvent évoluer.<br><br><strong>Source d’inspiration :</strong> le cadre des cinq langages présenté par Gary Chapman dans <a href="${FRENCH_BOOK_URL}" style="color:#315e52;">Les 5 langages de l’amour</a>. Questionnaire indépendant, distinct du <a href="${OFFICIAL_QUIZ_URL}" style="color:#315e52;">quiz officiel</a>, non affilié à l’auteur ni à ses éditeurs.</td></tr>
         </table>
       </td></tr></table>
     </body></html>` : '';
@@ -604,7 +623,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
           </section>
         </div>
         {kind === 'famille' && <div className="notice"><strong>Rappel de consentement :</strong> l’affection physique ne convient que si elle est souhaitée par toutes les personnes concernées. Demandez, écoutez et respectez les limites, sans exception.</div>}
-        <div className="notice"><strong>À garder en tête.</strong> Ceci est une aide à la réflexion, pas un test clinique ni un outil psychométrique validé. Vos préférences peuvent évoluer et ne résument pas votre personnalité. Ce projet n’est pas affilié à Gary Chapman ni à son éditeur.</div>
+        <div className="notice"><strong>À garder en tête.</strong> Ce questionnaire indépendant de huit questions s’inspire du cadre des cinq langages présenté par Gary Chapman dans <a className="source-link" href={FRENCH_BOOK_URL} target="_blank" rel="noopener noreferrer">Les 5 langages de l’amour</a>. Il est adapté aux contextes familial et professionnel; ce n’est pas le <a className="source-link" href={OFFICIAL_QUIZ_URL} target="_blank" rel="noopener noreferrer">quiz officiel</a> et il n’est affilié ni à l’auteur ni à ses éditeurs. C’est une aide à la réflexion, pas un test clinique ni un outil psychométrique validé; vos préférences peuvent évoluer et ne résument pas votre personnalité.</div>
         <div className="result-actions"><button className="button button-primary" onClick={() => window.print()} data-testid="button-print-result"><Printer size={16} /> Fiche PDF · 1 page</button><Link className="button button-light" href={`/sondage-${kind}`}><RotateCcw size={16} /> Refaire le questionnaire</Link><button className="button button-quiet" onClick={() => setConfirmClear(true)} data-testid="button-delete-result">Effacer mon résultat</button></div>
         <p className="small-note" style={{ marginTop: 15 }}>L’application prépare un brouillon; elle n’envoie aucun courriel à votre place.</p>
       </div>

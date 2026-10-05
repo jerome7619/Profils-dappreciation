@@ -322,6 +322,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid hsl(var(--accent)); o
 .qr-card p { font-size:11px; max-width:190px; }
 .qr-frame { background:white; padding:8px; border-radius:8px; line-height:0; }
 .footer { padding:30px 40px; max-width:1240px; margin:auto; border-top:1px solid hsl(var(--border)); display:flex; justify-content:space-between; color:hsl(var(--muted-foreground)); font-size:12px; }
+.footer-copy { display:flex; flex-direction:column; gap:6px; max-width:900px; }
+.footer-attribution { line-height:1.55; }
+.source-link { color:inherit; text-decoration:underline; text-underline-offset:2px; }
 .page-wrap { max-width:1050px; padding:28px 28px 90px; margin:auto; }
 .page-back { color:hsl(var(--muted-foreground)); text-decoration:none; font-size:13px; display:inline-flex; gap:8px; align-items:center; }
 .survey-head { margin:34px 0 22px; }
