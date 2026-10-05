@@ -16,6 +16,10 @@ type SavedSurvey = { answers: Record<number, string>; result?: Result };
 const FRENCH_BOOK_URL = 'https://www.leslibraires.ca/livres/5-langages-de-l-amour-les-gary-chapman-9782848992723.html';
 const OFFICIAL_QUIZ_URL = 'https://5lovelanguages.com/quizzes/love-language';
 
+function surveyUrlFor(kind: SurveyKind) {
+  return `${window.location.origin}/sondage-${kind}`;
+}
+
 const familyCategories: Category[] = [
   { id: 'parole', label: 'Paroles valorisantes', short: 'Les mots qui comptent', color: '#315e52', intro: 'Les personnes de cette catégorie se sentent aimées lorsqu’elles reçoivent des encouragements, des compliments, de la reconnaissance ou des mots d’appréciation.', examples: ['« Je suis fier·ère de toi. »', '« Merci pour tout ce que tu fais. »', '« J’apprécie ta présence. »'], hurts: ['Les critiques constantes.', 'Les paroles dures ou humiliantes.', 'Le manque de reconnaissance.'] },
   { id: 'temps', label: 'Moments de qualité', short: 'Une présence attentive', color: '#cf8067', intro: 'Pour ces personnes, l’attention complète vaut beaucoup. La présence et le temps partagé comptent davantage que les cadeaux ou les gestes matériels.', examples: ['Partager un repas sans téléphone.', 'Faire une promenade ensemble.', 'Avoir une conversation profonde.'], hurts: ['L’indifférence.', 'Les distractions constantes.', 'Les annulations répétées.'] },
@@ -234,10 +238,10 @@ function computeResult(kind: SurveyKind, answers: Record<number, string>, questi
   };
 }
 
-function LocalQr({ value, size = 126 }: { value: string; size?: number }) {
+function LocalQr({ value, size = 126, label = 'Code QR vers le questionnaire famille' }: { value: string; size?: number; label?: string }) {
   return <QRCodeSVG
     role="img"
-    aria-label="Code QR vers le questionnaire famille"
+    aria-label={label}
     value={value}
     size={size}
     level="M"
@@ -275,7 +279,7 @@ function Footer() {
 
 function Home({ toast }: { toast: (message: string) => void }) {
   const [showReset, setShowReset] = useState(false);
-  const familyUrl = `${window.location.origin}/sondage-famille`;
+  const familyUrl = surveyUrlFor('famille');
   const familySaved = readSaved('famille');
   const workSaved = readSaved('travail');
   const hasLegacyData = hasLegacySaved('famille') || hasLegacySaved('travail');
@@ -386,11 +390,12 @@ function Survey({ kind, toast }: { kind: SurveyKind; toast: (message: string) =>
   </>;
 }
 
-function PrintProfileSheet({ kind, categories, result, interpretationCategories }: {
+function PrintProfileSheet({ kind, categories, result, interpretationCategories, surveyUrl }: {
   kind: SurveyKind;
   categories: Category[];
   result: Result;
   interpretationCategories: Category[];
+  surveyUrl: string;
 }) {
   return <section className={`print-sheet print-sheet-${kind}`} aria-label={kind === 'famille' ? 'Fiche action à imprimer' : 'Carte de profil à imprimer'}>
     <header className="print-sheet-header">
@@ -424,6 +429,16 @@ function PrintProfileSheet({ kind, categories, result, interpretationCategories 
       <span>« Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »</span>
       {interpretationCategories.some((category) => category.id === 'affection') && <small>Les gestes physiques ne conviennent que s’ils sont souhaités par toutes les personnes concernées. Le consentement et les limites passent avant toute préférence.</small>}
     </aside>}
+    <aside className="print-invite">
+      <div className="print-invite-copy">
+        <strong>À votre tour de découvrir votre profil d’appréciation.</strong>
+        <p>Scannez le code ou suivez le lien pour compléter le questionnaire {kind === 'famille' ? 'famille' : 'travail'}. Partagez cette fiche pour inviter une autre personne à découvrir son profil.</p>
+        <a href={surveyUrl}>{surveyUrl}</a>
+      </div>
+      <div className="print-invite-code" data-survey-qr={kind}>
+        <LocalQr value={surveyUrl} size={82} label={`Code QR pour compléter le questionnaire ${kind === 'famille' ? 'famille' : 'travail'}`} />
+      </div>
+    </aside>
     <footer className="print-sheet-footer">
       Inspiré de l’ouvrage <a className="source-link" href={FRENCH_BOOK_URL}>Les 5 langages de l’amour</a> de Gary Chapman. Questionnaire indépendant, non affilié.
     </footer>
@@ -454,6 +469,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
     ? `${leaders.slice(0, 2).map((category) => category.label).join(' et ')}${leaders.length > 2 ? ' et autres' : ''} (${leaders[0] ? result?.percentages[leaders[0].id] : 0} %)`
     : primary ? `${primary.label} (${result?.percentages[primary.id]} %)` : '';
   const emailSubject = `Mon profil ${kind === 'famille' ? 'd’appréciation en famille' : 'de reconnaissance au travail'} — ${emailHeadline}`;
+  const surveyUrl = surveyUrlFor(kind);
   const emailBody = result && primary && secondary ? [
     'PROFILS D’APPRÉCIATION',
     kind === 'famille' ? 'FICHE ACTION · FAMILLE' : 'CARTE DE PROFIL · ENTREPRISE',
@@ -485,6 +501,11 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
       : '',
     '',
     'Ce résultat est une aide à la réflexion et à la conversation, pas un diagnostic. Les préférences peuvent évoluer.',
+    '',
+    'À VOTRE TOUR DE DÉCOUVRIR VOTRE PROFIL',
+    `Complétez le questionnaire ${kind === 'famille' ? 'famille' : 'travail'} et découvrez ce qui vous fait vous sentir apprécié·e :`,
+    surveyUrl,
+    'Vous pouvez aussi partager ce lien avec une personne qui souhaite découvrir son propre profil.',
     '',
     'Source d’inspiration : le cadre des cinq langages présenté par Gary Chapman dans Les 5 langages de l’amour.',
     `Livre imprimé en français : ${FRENCH_BOOK_URL}`,
@@ -539,6 +560,20 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${emailScoresHtml}</table>
           </td></tr>
           ${kind === 'famille' ? `<tr><td style="padding:14px 4px 4px;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;color:#536157;"><strong>Pour ouvrir la conversation :</strong> « Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »${interpretationCategories.some((category) => category.id === 'affection') ? '<br><br>Les gestes physiques ne conviennent que s’ils sont souhaités. Le consentement et les limites passent avant toute préférence.' : ''}</td></tr>` : ''}
+          <tr><td style="padding:14px 10px;border-radius:10px;background:#f3f0e6;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+              <td style="padding-right:10px;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;color:#253b32;">
+                <strong style="font-size:15px;color:#315e52;">À votre tour de découvrir votre profil !</strong>
+                <p style="margin:6px 0;">Complétez le questionnaire ${kind === 'famille' ? 'famille' : 'travail'} en scannant le code ou en suivant le lien.</p>
+                <a href="${escapeHtml(surveyUrl)}" style="color:#315e52;font-weight:bold;">Compléter le questionnaire</a>
+                <p style="margin:7px 0 0;font-size:12px;">Vous pouvez aussi transférer cette invitation ou partager le lien avec une personne qui souhaite découvrir son profil.</p>
+                <a href="${escapeHtml(surveyUrl)}" style="color:#536157;font-size:11px;overflow-wrap:anywhere;">${escapeHtml(surveyUrl)}</a>
+              </td>
+              <td width="100" align="right" valign="middle" style="width:100px;padding-left:6px;">
+                <a href="${escapeHtml(surveyUrl)}" style="text-decoration:none;"><!--SURVEY_QR--></a>
+              </td>
+            </tr></table>
+          </td></tr>
           <tr><td style="padding:14px 4px;font-family:Arial,sans-serif;font-size:11px;line-height:1.45;color:#69766d;">Un point de départ pour discuter, pas une étiquette ni un diagnostic. Les préférences peuvent évoluer.<br><br><strong>Source d’inspiration :</strong> le cadre des cinq langages présenté par Gary Chapman dans <a href="${FRENCH_BOOK_URL}" style="color:#315e52;">Les 5 langages de l’amour</a>. Questionnaire indépendant, distinct du <a href="${OFFICIAL_QUIZ_URL}" style="color:#315e52;">quiz officiel</a>, non affilié à l’auteur ni à ses éditeurs.</td></tr>
         </table>
       </td></tr></table>
@@ -547,8 +582,10 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
     try {
       if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
         try {
+          const qrSvg = document.querySelector(`[data-survey-qr="${kind}"] svg`)?.outerHTML ?? '';
+          const formattedHtml = emailHtml.replace('<!--SURVEY_QR-->', qrSvg);
           await navigator.clipboard.write([new ClipboardItem({
-            'text/html': new Blob([emailHtml], { type: 'text/html' }),
+            'text/html': new Blob([formattedHtml], { type: 'text/html' }),
             'text/plain': new Blob([emailBody], { type: 'text/plain' }),
           })]);
           toast('Fiche mise en forme copiée. Collez-la dans le courriel.');
@@ -569,7 +606,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
   return <>
     <Header />
     <main className="page-wrap fade-in">
-      <PrintProfileSheet kind={kind} categories={categories} result={result} interpretationCategories={interpretationCategories} />
+      <PrintProfileSheet kind={kind} categories={categories} result={result} interpretationCategories={interpretationCategories} surveyUrl={surveyUrl} />
       <div className="screen-result">
         <Link href="/" className="page-back"><ArrowLeft size={15} /> Retour à l’accueil</Link>
         <section className="result-hero">

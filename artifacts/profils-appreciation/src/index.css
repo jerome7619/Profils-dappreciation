@@ -472,6 +472,13 @@ button:focus-visible, a:focus-visible { outline: 3px solid hsl(var(--accent)); o
   .print-conversation { display:grid; grid-template-columns:1fr 1.5fr; gap:3px 10px; margin-top:8px; padding:7px 9px; border-left:3px solid #cf8067; border-radius:0 7px 7px 0; background:#f7f3e9; font-size:8pt; }
   .print-conversation strong { grid-column:1/-1; }
   .print-conversation small { grid-column:1/-1; color:#536157; font-size:7pt; line-height:1.2; }
+  .print-invite { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:6px; padding:6px 8px; border:1px solid #dce2da; border-radius:8px; background:#f7f3e9; break-inside:avoid; }
+  .print-invite-copy { flex:1; min-width:0; }
+  .print-invite-copy > strong { color:#315e52; font-size:8pt; }
+  .print-invite-copy p { margin:3px 0; color:#536157; font-size:7pt; line-height:1.2; }
+  .print-invite-copy a { color:#315e52; font-size:6.5pt; overflow-wrap:anywhere; }
+  .print-invite-code { flex:0 0 auto; padding:2px; background:#fff; line-height:0; }
+  .print-invite-code svg { display:block; }
   .print-sheet-footer { margin-top:7px; border-top:1px solid #d8ded5; padding-top:5px; color:#69766d; font-size:7pt; }
 }
 
