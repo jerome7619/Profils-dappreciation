@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import {
   ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, Copy,
-  HeartHandshake, Link2, Mail, Printer, RotateCcw, Share2, ShieldCheck, Sparkles,
+  HeartHandshake, Link2, Mail, Printer, RotateCcw, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -196,7 +196,6 @@ const workQuestions: Question[] = [
 const categoriesFor = (kind: SurveyKind) => kind === 'famille' ? familyCategories : workCategories;
 const makeQuestions = (kind: SurveyKind): Question[] => kind === 'famille' ? familyQuestions : workQuestions;
 const surveyLabel = (kind: SurveyKind) => kind === 'famille' ? 'famille' : 'entreprise';
-const resultContext = (kind: SurveyKind) => kind === 'famille' ? 'en famille' : 'en entreprise';
 const resultContextTitle = (kind: SurveyKind) => kind === 'famille' ? 'En famille' : 'En entreprise';
 
 const legacyFamilyStorageKey = 'profils-appreciation-famille-v1';
@@ -437,27 +436,6 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
   const interpretationCategories = tiedAtTop ? leaders : [primary, secondary].filter((category): category is Category => Boolean(category));
   const profileCardCategories = tiedAtTop ? leaders : [primary].filter((category): category is Category => Boolean(category));
   const [confirmClear, setConfirmClear] = useState(false);
-  const summary = result && primary && secondary ? [
-    `Mon reflet ${resultContext(kind)} — Profils d’appréciation`,
-    ...(tiedAtTop
-      ? [`Préférences à égalité en tête : ${leaders.map((category) => `${category.label} (${result.percentages[category.id]} %)` ).join(', ')}.`]
-      : [`Ma préférence principale : ${primary.label} (${result.percentages[primary.id]} %).`, `Une préférence secondaire : ${secondary.label} (${result.percentages[secondary.id]} %).`]),
-    ...interpretationCategories.map((category) => [
-      `${category.label} — ${category.intro}`,
-      `Exemples : ${category.examples.slice(0, 2).join(' ; ')}`,
-      category.hurts?.length ? `Ce qui peut blesser : ${category.hurts.slice(0, 2).join(' ; ')}` : '',
-      category.note ? `${category.noteLabel ?? 'À noter'} : ${category.note}` : '',
-    ].filter(Boolean).join('\n')),
-    `Ce résultat est une aide à la réflexion, pas un test psychométrique validé ni un diagnostic. Il peut évoluer.`,
-    'Les réponses restent dans le navigateur où le questionnaire a été rempli.',
-  ].join('\n') : '';
-  const familyActionSummary = [
-    'Voici quelques façons concrètes de me montrer que tu m’apprécies :',
-    ...interpretationCategories.map((category) => `${category.label} : ${category.examples.slice(0, 2).join(' ; ')}`),
-    'Pour en parler ensemble : « Qu’est-ce qui te fait te sentir apprécié·e, toi ? »',
-    interpretationCategories.some((category) => category.id === 'affection') ? 'Pour les gestes physiques, demande et respecte toujours la réponse de l’autre.' : '',
-  ].filter(Boolean).join('\n');
-  const shareText = kind === 'famille' ? familyActionSummary : summary;
   const emailHeadline = tiedAtTop
     ? `${leaders.slice(0, 2).map((category) => category.label).join(' et ')}${leaders.length > 2 ? ' et autres' : ''} (${leaders[0] ? result?.percentages[leaders[0].id] : 0} %)`
     : primary ? `${primary.label} (${result?.percentages[primary.id]} %)` : '';
@@ -546,18 +524,6 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
         </table>
       </td></tr></table>
     </body></html>` : '';
-  const shareProfile = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: kind === 'famille' ? 'Ma fiche action familiale' : 'Ma carte de profil professionnel', text: shareText });
-        return;
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-    }
-    try { await navigator.clipboard.writeText(shareText); toast('Fiche copiée, prête à partager.'); }
-    catch { toast('Partage indisponible dans ce navigateur.'); }
-  };
   const copyFormattedEmail = async () => {
     try {
       if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
@@ -607,8 +573,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
           <div className="conversation-prompt"><strong>Pour commencer la conversation</strong><p>« Voici ce qui me fait du bien. Et toi, qu’est-ce qui te fait te sentir apprécié·e ? »</p></div>
           {interpretationCategories.some((category) => category.id === 'affection') && <p className="profile-card-consent">Les gestes physiques ne conviennent que s’ils sont souhaités. Demandez, écoutez et respectez les limites de chacun·e.</p>}
           <div className="profile-card-buttons">
-            <button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager avec mes proches</button>
-            <button className="button button-light" onClick={prepareEmail} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button>
+            <button className="button button-primary" onClick={prepareEmail} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button>
             <button className="button button-light" onClick={copyFormattedEmail} data-testid="button-copy-formatted-email"><Copy size={16} /> Copier la fiche mise en forme</button>
           </div>
           <p className="small-note" style={{ marginTop: 10 }}>« Préparer un courriel » ouvre un brouillon avec l’objet. La copie mise en forme concerne le corps du message : placez le curseur à l’endroit voulu dans Outlook avant de coller, notamment au-dessus de votre signature.</p>
@@ -625,8 +590,7 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
           </div>
           {!tiedAtTop && <p className="profile-card-secondary"><strong>Une préférence secondaire :</strong> {secondary.label} ({result.percentages[secondary.id]} %)</p>}
           <div className="profile-card-buttons">
-            <button className="button button-primary" onClick={shareProfile} data-testid="button-share-profile"><Share2 size={16} /> Partager ma carte</button>
-            <button className="button button-light" onClick={prepareEmail} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button>
+            <button className="button button-primary" onClick={prepareEmail} data-testid="button-email-result"><Mail size={16} /> Préparer un courriel</button>
             <button className="button button-light" onClick={copyFormattedEmail} data-testid="button-copy-formatted-email"><Copy size={16} /> Copier la fiche mise en forme</button>
           </div>
           <p className="small-note" style={{ marginTop: 10 }}>« Préparer un courriel » ouvre un brouillon avec l’objet. La copie mise en forme concerne le corps du message : placez le curseur à l’endroit voulu dans Outlook avant de coller, notamment au-dessus de votre signature.</p>
