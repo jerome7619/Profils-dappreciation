@@ -15,9 +15,10 @@ type SavedSurvey = { answers: Record<number, string>; result?: Result };
 
 const FRENCH_BOOK_URL = 'https://www.leslibraires.ca/livres/5-langages-de-l-amour-les-gary-chapman-9782848992723.html';
 const OFFICIAL_QUIZ_URL = 'https://5lovelanguages.com/quizzes/love-language';
+const PUBLIC_APP_URL = 'https://profils-dappreciation--jeromerancourt.replit.app';
 
 function surveyUrlFor(kind: SurveyKind) {
-  return `${window.location.origin}/sondage-${kind}`;
+  return `${PUBLIC_APP_URL}/sondage-${kind}`;
 }
 
 const familyCategories: Category[] = [

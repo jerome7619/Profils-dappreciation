@@ -1,3 +1,4 @@
 - [Workspace package installs](pnpm-workspace-install.md) — Replit's package installer may need a pnpm workspace-filter fallback for artifact dependencies.
 - [Email sharing](email-sharing.md) — Use mailto for subject/body drafts; rich clipboard copy only supplies content and follows the mail client's cursor/signature.
 - [Chapman attribution](chapman-attribution.md) — Credit Gary Chapman’s book as the framework source; use non-Amazon book links and distinguish this independent quiz from the official one.
+- [Public QR links](public-qr-links.md) — Build shareable survey QR codes from the verified public deployment URL, not the current preview origin.
