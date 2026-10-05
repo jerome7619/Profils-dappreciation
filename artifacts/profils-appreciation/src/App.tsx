@@ -494,9 +494,9 @@ function Results({ kind, toast }: { kind: SurveyKind; toast: (message: string) =
       <td align="right" style="padding:7px 10px;border-bottom:1px solid #e5e9e2;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;color:#315e52;">${result?.percentages[category.id] ?? 0} %</td>
     </tr>`).join('');
   const emailHtml = result && primary && secondary ? `
-    <html><body style="margin:0;padding:20px;background:#f6f4ed;">
+    <html><body style="margin:0;padding:0;background:#ffffff;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-        <table role="presentation" width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;font-family:Arial,sans-serif;color:#253b32;">
+        <table role="presentation" width="540" cellpadding="0" cellspacing="0" style="max-width:540px;width:100%;table-layout:fixed;border-collapse:collapse;font-family:Arial,sans-serif;color:#253b32;">
           <tr><td style="padding:22px 24px;border-radius:14px 14px 0 0;background:#315e52;color:#ffffff;">
             <p style="margin:0 0 8px;font-size:11px;font-weight:bold;letter-spacing:1.5px;">PROFILS D’APPRÉCIATION</p>
             <h1 style="margin:0;font-size:25px;line-height:1.2;">${kind === 'famille' ? 'Ma fiche action · famille' : 'Mon profil de reconnaissance au travail'}</h1>
