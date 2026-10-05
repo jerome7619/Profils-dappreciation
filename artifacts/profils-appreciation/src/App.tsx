@@ -297,9 +297,6 @@ function Home({ toast }: { toast: (message: string) => void }) {
           <p>Un espace simple et privé pour découvrir les gestes qui vous font du bien — sans vous enfermer dans une case.</p>
           <div className="hero-actions"><Link className="button button-primary" href="/sondage-famille">Commencer en famille <ArrowRight size={16} /></Link><Link className="button button-light" href="/sondage-travail">Explorer en entreprise</Link></div>
         </div>
-        <div className="hero-art" aria-label="Illustration abstraite de liens et de proximité">
-          <div className="orbit" /><div className="orbit orbit-two" /><span className="art-note">à sa manière</span><span className="hero-leaf">⌁</span><span className="art-stamp">être vu·e<br />à sa façon</span>
-        </div>
       </section>
       <div className="intro-strip"><Sparkles size={17} /><span>8 questions en famille, 8 en entreprise. Aucune bonne ou mauvaise réponse : une occasion de mieux se dire les choses.</span></div>
       <section id="questionnaires" className="section">
