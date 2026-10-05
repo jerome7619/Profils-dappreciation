@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import {
   ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, Copy,
-  HeartHandshake, Link2, Mail, Printer, RotateCcw, ShieldCheck, Sparkles,
+  HeartHandshake, Mail, Printer, RotateCcw, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -260,7 +260,6 @@ function Header() {
     </Link>
     <nav className="top-nav" aria-label="Navigation principale">
       <Link href="/#questionnaires">Les questionnaires</Link>
-      <Link href="/#partager">Partager</Link>
     </nav>
   </header>;
 }
@@ -280,15 +279,10 @@ function Footer() {
 
 function Home({ toast }: { toast: (message: string) => void }) {
   const [showReset, setShowReset] = useState(false);
-  const familyUrl = surveyUrlFor('famille');
   const familySaved = readSaved('famille');
   const workSaved = readSaved('travail');
   const hasLegacyData = hasLegacySaved('famille') || hasLegacySaved('travail');
   const hasSaved = hasLegacyData || Object.keys(familySaved.answers).length > 0 || Object.keys(workSaved.answers).length > 0;
-  const copyFamilyLink = async () => {
-    try { await navigator.clipboard.writeText(familyUrl); toast('Lien du questionnaire famille copié.'); }
-    catch { toast('Copie indisponible dans ce navigateur.'); }
-  };
   const resetAll = () => {
     clearSaved('famille'); clearSaved('travail');
     setShowReset(false); toast('Les réponses enregistrées sur cet appareil ont été effacées.'); window.location.reload();
@@ -313,12 +307,6 @@ function Home({ toast }: { toast: (message: string) => void }) {
         <div className="survey-grid">
           <Link href="/sondage-famille" className="survey-card family" data-testid="link-family-survey"><div><span className="eyebrow">8 questions · À la maison et avec les proches</span><h3>Questionnaire famille</h3><p>Paroles valorisantes, moments de qualité, cadeaux, services rendus et affection physique souhaitée.</p></div><span className="card-arrow"><ArrowRight size={19} /></span></Link>
           <Link href="/sondage-travail" className="survey-card work" data-testid="link-work-survey"><div><span className="eyebrow">En entreprise, sans contact physique</span><h3>Questionnaire entreprise</h3><p>Paroles valorisantes, moments de qualité, attentions symboliques, services rendus et connexion humaine.</p></div><span className="card-arrow"><ArrowRight size={19} /></span></Link>
-        </div>
-      </section>
-      <section id="partager" className="section" style={{ paddingTop: 5 }}>
-        <div className="privacy-band">
-          <div><span className="eyebrow">Privé par conception</span><h2>Vos réponses restent ici.</h2><p>Aucun compte, aucun nom, aucune donnée envoyée ailleurs. Les réponses et résultats sont enregistrés uniquement dans le stockage local de ce navigateur. Vous pouvez tout effacer à tout moment.</p></div>
-          <div className="qr-card"><div className="qr-frame"><LocalQr value={familyUrl} /></div><div><span className="eyebrow">À partager en famille</span><p>Ce code ouvre le questionnaire famille uniquement. Il ne contient aucune réponse personnelle.</p><button className="button button-light" onClick={copyFamilyLink} data-testid="button-copy-family-link"><Link2 size={15} /> Copier le lien</button></div></div>
         </div>
       </section>
       <section className="section" style={{ paddingTop: 0 }}>

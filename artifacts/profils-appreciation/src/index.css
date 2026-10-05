@@ -315,12 +315,6 @@ button:focus-visible, a:focus-visible { outline: 3px solid hsl(var(--accent)); o
 .survey-card h3 { font:500 33px var(--app-font-serif); letter-spacing:-.03em; margin:13px 0 8px; }
 .survey-card p { color:rgba(37,54,47,.75); line-height:1.65; max-width:420px; margin:0; font-size:14px; }
 .card-arrow { align-self:flex-end; width:43px;height:43px;border:1px solid rgba(37,54,47,.3);border-radius:50%;display:grid;place-items:center; }
-.privacy-band { background:#ebe4d5; display:grid; grid-template-columns:1fr auto; gap:40px; align-items:center; padding:55px; border-radius:25px; }
-.privacy-band h2 { font:500 35px var(--app-font-serif); margin:10px 0; }
-.privacy-band p { color:hsl(var(--muted-foreground)); max-width:650px; line-height:1.7; margin:0; }
-.qr-card { display:flex; gap:20px; align-items:center; background:#faf7ef; padding:20px; border-radius:18px; }
-.qr-card p { font-size:11px; max-width:190px; }
-.qr-frame { background:white; padding:8px; border-radius:8px; line-height:0; }
 .footer { padding:30px 40px; max-width:1240px; margin:auto; border-top:1px solid hsl(var(--border)); display:flex; justify-content:space-between; color:hsl(var(--muted-foreground)); font-size:12px; }
 .footer-copy { display:flex; flex-direction:column; gap:6px; max-width:900px; }
 .footer-attribution { line-height:1.55; }
@@ -398,7 +392,6 @@ button:focus-visible, a:focus-visible { outline: 3px solid hsl(var(--accent)); o
  .hero { grid-template-columns:1fr; padding:42px 22px 50px; gap:30px; }.hero-art { min-height:320px; }
  .hero h1 { font-size:clamp(54px,14vw,76px); }.intro-strip { padding:20px; }
  .section { padding:70px 22px; }.survey-grid { grid-template-columns:1fr; }.survey-card { min-height:220px; }
- .privacy-band { grid-template-columns:1fr;padding:28px; }.qr-card { justify-content:space-between; }
  .footer { padding:24px 22px; gap:15px;flex-direction:column; }.page-wrap { padding:20px 18px 70px; }
  .answer-grid { grid-template-columns:1fr; }.answer-option { min-height:80px; }.result-content { grid-template-columns:1fr; }
  .result-hero:after { font-size:100px;right:1%; }.survey-controls .small-note { display:none; }
